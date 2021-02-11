@@ -3,7 +3,9 @@ DeepFashion2Dataset/test
 DeepFashion2Dataset/train
 DeepFashion2Dataset/validation
 DeepFashion2Dataset/json_for_validation
+DeepFashion2Dataset/model
 *.zip
+*.h5
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
