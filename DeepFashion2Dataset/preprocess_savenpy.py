@@ -52,10 +52,9 @@ base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 train_path = base_path + '/train'
 train_top_dir_file = base_path + '/train/train_top_dir_file.txt'
 train_top_label_file = base_path + '/train/train_top_label_file.txt'
-train_img_dir = base_path + '/train/image'
+
 val_path = base_path + '/validation'
 val_label_dir = base_path + '/validation/annos'
-val_img_dir = base_path + '/validation/image'
 val_top_dir_file = base_path + '/validation/val_dir_file.txt'
 val_top_label_file = base_path + '/validation/val_label_file.txt'
 
@@ -97,14 +96,19 @@ def preprocess(data_path, x_data_path, y_data_path, name, group_num):
     for i in range(len(x_data)):
         x = data_path+'/'+x_data[i]
         if os.path.isfile(x) and x != []:
-                #print(x)
-                y_after_data[k] = y_data[i]
-                output_file.write(str(y_after_data[k])+'\n')
-                img = cv2.imread(x)#讀圖
-                img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
-                img = img_to_array(img)
-                x_after_data[k] = img
-                k += 1
+                if y_data[i] !='10' and y_data[i] !='11' and y_data[i] !='12' and y_data[i] !='13':
+                    if y_data[i]=='6':
+                        y_after_data[k] = '5'
+                    else:
+                        y_after_data[k] = y_data[i]
+                    output_file.write(str(y_after_data[k])+'\n')
+                    img = cv2.imread(x)#讀圖
+                    img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
+                    img = img_to_array(img)
+                    x_after_data[k] = img
+                    k += 1
+                #else:
+                #    print("--data 10111213")
         else:
             non_exist.append(i)
             print("--Delete Not File--")                    
@@ -131,8 +135,8 @@ def preprocess(data_path, x_data_path, y_data_path, name, group_num):
 
 # In[72]:
 
-#preprocess(train_path, train_top_dir_file, train_top_label_file, 'train', 14) 
-preprocess(val_path, val_top_dir_file, val_top_label_file, 'val', 14) 
+#preprocess(train_path, train_top_dir_file, train_top_label_file, 'train_v2', 14) 
+preprocess(val_path, val_top_dir_file, val_top_label_file, 'val_v2', 14) 
 
 
 

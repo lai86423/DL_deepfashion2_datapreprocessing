@@ -71,13 +71,6 @@ final_model.compile(optimizer=opt,loss={'category':'categorical_crossentropy'
          }
                     ) #default:top-5
 
-# category = []
-# category = []
-# style = []
-# style = []
-# sleeve = []
-# pattern = []
-#?�次訓練?�數
 def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_size=32):
     
     cnt = 0 
