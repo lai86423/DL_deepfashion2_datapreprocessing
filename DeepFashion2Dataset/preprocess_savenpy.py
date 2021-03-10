@@ -53,15 +53,18 @@ train_path = base_path + '/train'
 train_top_dir_file = base_path + '/train/train_top_dir_file.txt'
 train_top_label_file = base_path + '/train/train_top_label_file.txt'
 
+train_x_file = base_path + '/train/train_x_file.txt'
+train_y_file = base_path + '/train/train_y_file.txt'
+
 val_path = base_path + '/validation'
 val_label_dir = base_path + '/validation/annos'
 val_top_dir_file = base_path + '/validation/val_dir_file.txt'
 val_top_label_file = base_path + '/validation/val_label_file.txt'
 
 # 製作訓練資料 標籤&資料集------------------------------------------------------
-img_per_amount = 21600
+img_per_amount = 10800#21600
 
-def preprocess(data_path, x_data_path, y_data_path, name, group_num):
+def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_data = ReadFile(x_data_path)
     y_data = ReadFile(y_data_path)
     #y_data = np.load(y_data_path, allow_pickle=True)
@@ -94,7 +97,7 @@ def preprocess(data_path, x_data_path, y_data_path, name, group_num):
     output_file = open(data_path+'/'+ 'label'+ name +'.txt', 'w')
     non_exist = []
     for i in range(len(x_data)):
-        x = data_path+'/'+x_data[i]
+        x = x_path+x_data[i]
         if os.path.isfile(x) and x != []:
                 if y_data[i] !='10' and y_data[i] !='11' and y_data[i] !='12' and y_data[i] !='13':
                     if y_data[i]=='6':
@@ -135,8 +138,10 @@ def preprocess(data_path, x_data_path, y_data_path, name, group_num):
 
 # In[72]:
 
-#preprocess(train_path, train_top_dir_file, train_top_label_file, 'train_v2', 14) 
-preprocess(val_path, val_top_dir_file, val_top_label_file, 'val_v2', 14) 
+#preprocess(train_path+'/',train_path, train_top_dir_file, train_top_label_file, 'train_v2', 14) 
+#preprocess(val_path+'/',val_path, val_top_dir_file, val_top_label_file, 'val_v2', 14) 
+preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_v3', 14) 
+
 
 
 

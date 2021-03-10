@@ -7,6 +7,10 @@ from sys import platform
 import argparse
 import numpy as np
 import re
+import detectColor
+import time
+#print(time.strftime('%m%d', time.localtime(time.time())))
+#print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
 #linux-------
 base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 train_path = base_path + '/train'
@@ -19,6 +23,7 @@ val_top_dir_file = base_path + '/validation/val_dir_file.txt'
 val_top_label_file = base_path + '/validation/val_label_file.txt'
 
 new_img_dir = base_path + '/train/image_new/'
+
 def ReadFile(data_path):
     data = []
     with open(data_path, 'r') as f:
@@ -26,6 +31,14 @@ def ReadFile(data_path):
             data.append(line[:-1])
     print(len(data)) 
     return data
+
+old_img_file = ReadFile(train_top_dir_file)
+old_img_label_file = ReadFile(train_top_label_file)
+version = 2
+train_x_file = open(base_path + '/train/train_x_file'+version+'.txt',"w")
+train_y_file = open(base_path + '/train/train_y_file'+version+'.txt',"w")
+
+
 try:
     # Import Openpose (Windows/Ubuntu/OSX)
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -52,27 +65,36 @@ try:
     params["face"] = True
     params["hand"] = True
 
+    # -----計算照片上下左右界線
     def count_limitPoint(space, percent, point1, point2, max, min):
-        print(" space*percent", space*percent)
+        #判斷點往旁邊取
         limitpoint1 = point1 - space*percent
         limitpoint2 = point2 + space*percent
-        print("L1,L2",limitpoint1,limitpoint2,min)
-        if limitpoint1 < min or limitpoint1 > limitpoint2:
+        #print("origin point 1 & 2 :",limitpoint1,limitpoint2)
+        #print(" space*percent", space*percent)
+        if limitpoint1 < min:
             limitpoint1 = min
-        if limitpoint2 >max or limitpoint1 > limitpoint2:
+        if limitpoint2 >max :
             limitpoint2 = max
-
+        if limitpoint1 > limitpoint2:
+            limitpoint1 = min
+            limitpoint2 = max
+        #print("point 1 & 2 , min max",limitpoint1,limitpoint2,min,max)
         return int(limitpoint1), int(limitpoint2)
         
+    def count_center(point1,point2):
+        point_halfdis = (point2 - point1)/2
+        point_center = point1 + point_halfdis
+        return int(point_halfdis), int(point_center)
 
-    def openpose_preprocess(img_path,img_label, img_name, save_path,  new_img_list, new_img_label_list):
+
+    def openpose_preprocess(img_path,img_label, img_name, save_path, new_x_file, new_y_file):
         # Flags
-        #print(img_path)
         parser = argparse.ArgumentParser()
         parser.add_argument("--image_path", default=img_path, help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
         args = parser.parse_known_args()
 
-        # Add others in path?
+        # Add others in path
         for i in range(0, len(args[1])):
             curr_item = args[1][i]
             if i != len(args[1])-1: next_item = args[1][i+1]
@@ -84,7 +106,6 @@ try:
                 key = curr_item.replace('-','')
                 if key not in params: params[key] = next_item
 
-
         # Starting OpenPose
         opWrapper = op.WrapperPython()
         opWrapper.configure(params)
@@ -93,194 +114,300 @@ try:
         # Process Image
         datum = op.Datum()
         img = cv2.imread(args[0].image_path)
+        if img is None:
+            print("img not exist!")
+            return 0
         datum.cvInputData = img
         opWrapper.emplaceAndPop(op.VectorDatum([datum]))
 
         height, width, channels = img.shape
-
+        #骨架圖
+        #cv2.imwrite(save_path + img_name+'bone_Down.jpg', datum.cvOutputData)
+        
+        #------根據骨架的圖片切割-------
         #---判斷圖片有人
+        a = np.zeros(3)
         if datum.poseKeypoints is not None: 
-            a = np.zeros(3)
-            #---判斷人包含頭則切掉
-            # if (datum.poseKeypoints[0][0] == a).any() == False: 
-            #     print("cut head!")
-            #     # cut head 
-            #     headH = datum.poseKeypoints[0][0][1] - datum.poseKeypoints[0][1][1]
-            #     # 裁切圖片
-            #     Y_nohead = int(datum.poseKeypoints[0][1][1] + headH*0.5)
-            #     img_nohead = img[Y_nohead:height, 0:width]
-            #     #cv2.imwrite(save_path + img_name+'_cuthead.jpg', img_nohead)
-            #     height2, width, channels = img_nohead.shape
-            # else:
-            #     print("no head!")
-
+            try:
+                if (datum.poseKeypoints[1][1] == a).any() == False:
+                    print("!!except >=2 human")
+                    return 0
+            except:
+                pass
+                
             #---判斷有上身
             if (datum.poseKeypoints[0][1] == a).any() == False:
-                if (datum.poseKeypoints[0][10] == a).any() == False : #and [(datum.poseKeypoints[0][13] == a).any() == False]   另隻腳先不判斷~
+                if (datum.poseKeypoints[0][0] == a).any() == False:
+                    try:
+                        if ((datum.poseKeypoints[0][1][1] - datum.poseKeypoints[0][0][1]) >= (width/4)):
+                            print("!!except Big head photo")
+                            return 0
+                    except Exception as e:
+                        print("!!except Big head photo",e)
+                         
+                #---判斷同時也具有下身
+                if (datum.poseKeypoints[0][10] == a).any() == False :
                     print("Have upper & lower")
-                    #---切上身
+                    #---切開上身
+                    # 1.切上下
                     try:
                         legH = datum.poseKeypoints[0][13][1] - datum.poseKeypoints[0][12][1]
+                        if legH <=0:
+                            print("!!except legH")
+                            return 0
                     except Exception as e:
-                        print("legH",e)
-                        legH = height /2    
-                    #img_Up = img[int(datum.poseKeypoints[0][1][1]) : int(datum.poseKeypoints[0][8][1]) , 0:width]
+                        print("!!except legH",e)
+                        return 0  
                     try:
                         img_Up_height_N,  img_Up_height_S = count_limitPoint(legH, 0.1, int(datum.poseKeypoints[0][1][1]), int(datum.poseKeypoints[0][8][1]),height, 0 )
                     except Exception as e:
-                        print("img_Up_height_N,  img_Up_height_S except",e)
+                        print("!!except img_Up_height_N,  img_Up_height_S except",e)
+                        return 0
+                        
 
-                    #cv2.imwrite('output_up.jpg', img_up)
-                    #height3, width, channels = img_Up.shape
-                    # 切圖寬
+                    # 2.切左右
                     try:
                         shoWid = datum.poseKeypoints[0][5][0] - datum.poseKeypoints[0][2][0]
-                        print("shoWid", shoWid)
+                        if shoWid <=0:
+                            print("!!except shoWid")
+                            return 0
                     except Exception as e:
-                        print(e)
-                        shoWid = width/2
+                        print("!!except shoWid",e)
+                        return 0
                     try:
-                        img_Up_width_L,  img_Up_width_R= count_limitPoint(shoWid, 0.5, int(datum.poseKeypoints[0][3][0]),int(datum.poseKeypoints[0][6][0]),width, 0)
+                        img_Up_width_L,  img_Up_width_R= count_limitPoint(shoWid, 0.3, int(datum.poseKeypoints[0][3][0]),int(datum.poseKeypoints[0][6][0]),width, 0)
 
                     except Exception as e:
-                        print("img_Up_width_L,  img_Up_width_R except",e)
-                    # if shoWid > 0:
-                    #     print("shoWid", shoWid)
-                    #     try:
-                    #         limit_L = int(datum.poseKeypoints[0][3][0]- 0.5*shoWid)
-                    #         limit_R = int(datum.poseKeypoints[0][6][0] + 0.5*shoWid)
-                    #        #print("limit_L:limit_R",limit_L,limit_R)
-                    #         if(limit_L<0):
-                    #             limit_L = 0
-                    #         if(limit_R>width):
-                    #             limit_R=width
-                    print("N,S,L,R",img_Up_height_N,  img_Up_height_S,img_Up_width_L,  img_Up_width_R)
+                        print("!!except img_Up_width_L,  img_Up_width_R except",e)
+                        return 0
                     
-                    img_Up = img[img_Up_height_N:img_Up_height_S,img_Up_width_L:img_Up_width_R]
+                    # 3.切圖
+                    try:
+                        img_Up = img[img_Up_height_N:img_Up_height_S,img_Up_width_L:img_Up_width_R]
+                        #print("img_Up OK!")
+                    except Exception as e:
+                        print("!!except img_Up ",e)
+                        return 0
 
-                    print("img_label", int(img_label))
+                    # 判斷此切圖是否為原本標籤內容
                     if int(img_label) <= 5:
+                        if (img_Up.shape== a).any(): 
+                            print("photo size too small")
+                            return 0
                         cv2.imwrite(save_path + img_name+'_Up.jpg', img_Up)
-                        new_img_list.append(save_path + img_name+'_Up.jpg')
-                        new_img_label_list.append(img_label)
+                        new_x_file.write(str(img_name)+'_Up.jpg' + '\n')
+                        new_y_file.write(img_label + '\n')
+
+                        # # -----顏色辨識
+                        # height_end, width_end, channels = img_Up.shape
+                        # try:
+                        #     img_Color = img_Up[int(width_end/4) :int(width_end*3/4), int(height_end/4):int(height_end*3/4)]
+                        #     print("img_Color OK!",img_Color.shape)
+
+                        # except Exception as e:
+                        #     print("!!except img_Color img_Up")
+                        #     return 0
+
+                        # if (img_Color.shape== a).any(): 
+                        #     print("color photo size too small")    
+                        #     return 0                       
+                        # cv2.imwrite(save_path+'color/' + img_name+'_color.jpg', img_Color)
+                        # color = detectColor.get_color(img_Color,img_name)
+                        # print("## Color = ", color)
                     else:
+                        #不是的部分還沒有標籤 另外存
+                        if (img_Up.shape== a).any(): 
+                            print("photo size too small")
+                            return 0
                         cv2.imwrite(save_path +'img_nolabel/'+ img_name+'_Up.jpg', img_Up)
                         
-                    #---切下身
+                    #---切開下身
+                    # 1.切上下
                     try:
                         img_Down_height_N,  img_Down_height_S = count_limitPoint(legH, 1, int(datum.poseKeypoints[0][10][1]), int(datum.poseKeypoints[0][10][1]),height, int(datum.poseKeypoints[0][8][1])-0.1*legH )
                     except Exception as e:
-                        print("img_Down_height_N,  img_Down_height_S except",e)
-                    
+                        print("!!except img_Down_height_N,  img_Down_height_S ",e)
+                        return 0
+                    # 2.切左右
                     try:
                         buttWid = datum.poseKeypoints[0][12][0] - datum.poseKeypoints[0][9][0]
-                        print("buttWid", buttWid)
+                        if buttWid <=0:
+                            print("!!except buttWid")
+                            return 0
+                        
                     except Exception as e:
-                        print("buttWid except",e)
-                        buttWid = width/2
-                    #img_Down = img_Down[0:height4, int(datum.poseKeypoints[0][9][0]- buttWid): int(datum.poseKeypoints[0][12][0] + buttWid)]
-                    
+                        print("!!except buttWid",e)
+                        return 0
                     try:
                         img_Down_width_L,  img_Down_width_R= count_limitPoint(buttWid, 1, int(datum.poseKeypoints[0][9][0]),int(datum.poseKeypoints[0][12][0]),width, 0)
 
                     except Exception as e:
-                        print("img_Down_width_L,  img_Down_width_R except",e)
-                
-                    print("Down N,S,L,R",img_Down_height_N,  img_Down_height_S,img_Down_width_L,  img_Down_width_R)
+                        print("!!exceptimg_Down_width_L,  img_Down_width_R except",e)
+                        return 0
                     
-                    img_Down = img[img_Down_height_N:img_Down_height_S,img_Down_width_L:img_Down_width_R]
-
-
-                    # try:
-                    #     img_Down = img[int(datum.poseKeypoints[0][10][1]-legH) : int(datum.poseKeypoints[0][10][1]+legH), 0:width]
-                    # except Exception as e:
-                    #     print(e)
-                    #     img_Down = img[int(datum.poseKeypoints[0][8][1]-0.1*legH) : height, 0:width]
-                    # # #cv2.imwrite('output_down.jpg', img_down)
-                    # height4, width, channels = img_Down.shape
-
-                    # #切圖寬
-                    # buttWid = datum.poseKeypoints[0][12][0] - datum.poseKeypoints[0][9][0]
-                    # print("buttWid", buttWid)
-                    # if buttWid > 0:
-                    #     img_Down = img_Down[0:height4, int(datum.poseKeypoints[0][9][0]- buttWid): int(datum.poseKeypoints[0][12][0] + buttWid)]
+                    # 3.切圖                
+                    try:
+                        img_Down = img[img_Down_height_N:img_Down_height_S,img_Down_width_L:img_Down_width_R]
+                        print("img_Down OK!")
+                    except Exception as e:
+                        print("!!except img_Down ",e)
+                        return 0
                     
                     if int(img_label) > 5:
+                        if (img_Down.shape== a).any(): 
+                            print("photo size too small")
+                            return 0
                         cv2.imwrite(save_path + img_name+'_Down.jpg', img_Down)
-                        new_img_list.append(save_path + img_name+'_Down.jpg')
-                        new_img_label_list.append(img_label)
+                        new_x_file.write(str(img_name)+'_Down.jpg' + '\n')
+                        new_y_file.write(img_label + '\n')
+                        # # -----顏色辨識
+                        # height_end, width_end, channels = img_Down.shape
+                        # img_Color = img_Down[int(width_end/4) :int(width_end*3/4), int(height_end/4):int(height_end*3/4)]
+                        # if (img_Color.shape== a).any(): 
+                        #     print("photo size too small")
+                        #     return 0
+                        # cv2.imwrite(save_path +'color/' + img_name+'_color.jpg', img_Color)
+                        # color = detectColor.get_color(img_Color,img_name)
+                        # print("## Color = ", color)
                     else:
+                        if (img_Down.shape== a).any(): 
+                            print("photo size too small")
+                            return 0
                         cv2.imwrite(save_path +'img_nolabel/'+ img_name+'_Down.jpg', img_Down)
                     
 
                 #--只有上身  
                 else:
                     print("Only upper")
-                    #切圖寬
-                    shoWid = datum.poseKeypoints[0][5][0] - datum.poseKeypoints[0][2][0]
-                    print("shoWid", shoWid)
-                    if shoWid > 0:
-                        limit_L = int(datum.poseKeypoints[0][3][0]- 0.5*shoWid)
-                        limit_R = int(datum.poseKeypoints[0][6][0] + 0.5*shoWid)
-                        if(limit_L<0 or limit_L>width):
-                            limit_L = 0
-                        if(limit_R>width or limit_R<0):
-                            limit_R = width
-                    else:
-                        limit_L = 0
-                        limit_R = width
-
+                    
+                    # 1.切上下
                     try:
-                        img_Up = img[datum.poseKeypoints[0][1][1]:height, limit_L:limit_R]
+                        shoWid = datum.poseKeypoints[0][5][0] - datum.poseKeypoints[0][2][0]
+                        if shoWid <=0:
+                            print("!!except shoWid")
+                            return 0
                     except Exception as e:
-                        print(e)
-                        img_Up = img[0:height, limit_L:limit_R]
-                    new_img_list.append(save_path + img_name+'_Up.jpg')
-                    new_img_label_list.append(img_label)
+                        print("!!except shoWid",e)
+                        return 0
+                    try:
+                        img_Up_height_N,  img_Up_height_S = count_limitPoint(shoWid, 0.4, int(datum.poseKeypoints[0][1][1]), int(datum.poseKeypoints[0][8][1]),height, 0 )
+                    except Exception as e:
+                        print("!!except img_Up_height_N,  img_Up_height_S ",e)
+                        return 0
+                    # 2.切左右
+                    try:
+                        img_Up_width_L,  img_Up_width_R= count_limitPoint(shoWid, 0.3, int(datum.poseKeypoints[0][3][0]),int(datum.poseKeypoints[0][6][0]),width, 0)
+
+                    except Exception as e:
+                        print("!!except img_Up_width_L,  img_Up_width_R ",e)
+                        return 0
+                    # 3.切圖
+                    try:
+                        img_Up = img[img_Up_height_N:img_Up_height_S,img_Up_width_L:img_Up_width_R]
+                    except Exception as e:
+                        print("!!except img_Up ",e)
+                        return 0
+                    if (img_Up.shape== a).any(): 
+                        print("photo size too small")
+                        return 0
                     cv2.imwrite(save_path + img_name+'_Up.jpg', img_Up)
+                    new_x_file.write(str(img_name)+'_Up.jpg' + '\n')
+                    new_y_file.write(img_label + '\n')
+                    # # -----顏色辨識
+                    # height_end, width_end, channels = img_Up.shape
+                    # w_color = int(width_end/3)
+                    # img_Color = img_Up[int(width_end/4) :int(width_end*3/4), int(height_end/4):int(height_end*3/4)]
+                    # if (img_Color.shape== a).any(): 
+                    #     print("photo size too small")
+                    #     return 0
+                    # cv2.imwrite(save_path +'color/' + img_name+'_color.jpg', img_Color)
+                    # color = detectColor.get_color(img_Color,img_name)
+                    # print("## Color = ", color)
+
             #--只有下身 
             else:
                 print("Only lower")
-                legH = datum.poseKeypoints[0][13][1] - datum.poseKeypoints[0][12][1]
+                # 1.切上下
                 try:
-                    img_Down = img[0 : int(datum.poseKeypoints[0][10][1]+legH), 0:width]
+                    legH = datum.poseKeypoints[0][13][1] - datum.poseKeypoints[0][12][1]
+                    if legH <=0:
+                            print("!!except legH")
+                            return 0
                 except Exception as e:
-                    print(e)
-                    img_Down = img[0 : height, 0:width]
-                #cv2.imwrite('output_down.jpg', img_Down)
-                height4, width, channels = img_Down.shape
+                    print("!!except legH",e)
+                    return 0
+                try:
+                    img_Down_height_N,  img_Down_height_S = count_limitPoint(legH, 1, int(datum.poseKeypoints[0][10][1]), int(datum.poseKeypoints[0][10][1]),height, 0 )
+                except Exception as e:
+                    print("!!except except img_Down_height_N,  img_Down_height_S ",e)
+                    return 0
+                # 2.切左右
+                try:
+                    buttWid = datum.poseKeypoints[0][12][0] - datum.poseKeypoints[0][9][0]
+                    if buttWid <=0:
+                        print("!!except buttWid ",e)
+                        return 0
+                except Exception as e:
+                    print("!!except buttWid ",e)
+                    return 0
+                try:
+                    img_Down_width_L,  img_Down_width_R= count_limitPoint(buttWid, 1, int(datum.poseKeypoints[0][9][0]),int(datum.poseKeypoints[0][12][0]),width, 0)
 
-                #切圖寬 
-                buttWid = datum.poseKeypoints[0][12][0] - datum.poseKeypoints[0][9][0]
-                if buttWid > 0:
-                    img_Down = img[0:height4, int(datum.poseKeypoints[0][9][0]- buttWid):int(datum.poseKeypoints[0][12][0] + buttWid)]
-        
-                cv2.imwrite(save_path + img_name+'_Down.jpg', img_Down)  
-                new_img_list.append(save_path + img_name+'_Down.jpg')
-                new_img_label_list.append(img_label)
+                except Exception as e:
+                    print("!!except img_Down_width_L,  img_Down_width_R ",e)
+                    return 0
+                # 3.切圖            
+                try:
+                    img_Down = img[img_Down_height_N:img_Down_height_S,img_Down_width_L:img_Down_width_R]
+                except Exception as e:
+                    print("Exception img_Down ",e)
+                    return 0
+
+                if int(img_label) > 5:
+                    if (img_Down.shape== a).any(): 
+                        print("photo size too small")
+                        return 0
+                    cv2.imwrite(save_path + img_name+'_Down.jpg', img_Down)
+                    new_x_file.write(str(img_name)+'_Down.jpg' + '\n')
+                    new_y_file.write(img_label + '\n')
+                    # # -----顏色辨識
+                    # height_end, width_end, channels = img_Down.shape
+                    # img_Color = img_Down[int(width_end/4) :int(width_end*3/4), int(height_end/4):int(height_end*3/4)]
+                    # if (img_Color.shape== a).any(): 
+                    #     print("photo size too small")
+                    #     return 0
+                    # cv2.imwrite(save_path+'color/'  + img_name+'_color.jpg', img_Color)
+                    # color = detectColor.get_color(img_Color,img_name)
+                    # print("## Color = ", color)
+                else:
+                    if (img_Down.shape== a).any(): 
+                        print("photo size too small")
+                        return 0
+                    cv2.imwrite(save_path +'img_nolabel/'+ img_name+'_Down.jpg', img_Down)
+                
         else:
             print("No human!")  
             cv2.imwrite(save_path + img_name+'.jpg', img) 
-            new_img_list.append(save_path + img_name+'.jpg')
-            new_img_label_list.append(img_label) 
-        return new_img_list, new_img_label_list
+            new_x_file.write(str(img_name)+'.jpg' + '\n')
+            new_y_file.write(img_label + '\n')
+            # # -----顏色辨識
+            # img_Color = img[int(width/4) :int(width*3/4), int(height/4):int(height*3/4)]
+            # if (img_Color.shape== a).any(): 
+            #     print("photo size too small")
+            #     return 0
+            # cv2.imwrite(save_path +'color/' + img_name+'_color.jpg', img_Color)
+            # color = detectColor.get_color(img_Color,img_name)
+            # print("## Color = ", color)
+        return 0
+    for i in range(len(old_img_file)-100):
+        i = i +49457
+        print("--------", old_img_file[i], old_img_label_file[i])
+        openpose_preprocess(train_path+'/'+old_img_file[i], old_img_label_file[i],str(i+1).zfill(6), new_img_dir, train_x_file, train_y_file)   
+    #print("Before len", len(old_img_file), len(old_img_label_file))
+    #print("After len", len(train_x_file), len(train_y_file))
 
-
-    img_path1 = "/home/irene/local/src/openpose/examples/media/001385.jpg"
-
-    img_list = []
-    img_label_list = []
-    old_img_file = ReadFile(train_top_dir_file)
-    old_img_label_file = ReadFile(train_top_label_file)
-    print(len(old_img_file),len(old_img_label_file))
-    
-    for i in range(13):
-        i = i
-        print(old_img_file[i], old_img_label_file[i])
-        #print(img_list, img_label_list,str(i).zfill(6))
-        img_list, img_label_list = openpose_preprocess(train_path+'/'+old_img_file[i], old_img_label_file[i],str(i+1).zfill(6), new_img_dir, img_list, img_label_list)
-    print(img_list, img_label_list)    
-
+    train_x_file.close()
+    train_y_file.close()
 except Exception as e:
         print(e)
         sys.exit(-1)
