@@ -11,37 +11,50 @@ from keras.models import Model
 import keras
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-# 資�?路�?--------------------------------------------------------------------
-#base_path = 'C:\\Users\\Irene\\Documents\\ncu\\論�?\\The iMaterialist Fashion Attribute Dataset'
-#data_path = 'C:\\Users\\Irene\\Documents\\ncu\\論�?\\The iMaterialist Fashion Attribute Dataset\\dataset_v0119'
 #linux-------
 base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 train_path = base_path + '/train'
 val_path = base_path + '/validation'
 pltsave_path = base_path+'/plt_img'
+
+# y_true = [1, 1, 2, 4, 3, 5, 3, 3, 5,4,1,2]
+# y_pred = [0, 1, 2, 2, 0, 4, 3, 4, 5,4,2,1]
+def printFun(a):
+    for i in range(20):
+        print(a[i])
+
 def predectTest(name, date):
     #Load Data
-    x_val = np.load(os.path.join(val_path,'inputs1val.npy'))
-    y_val = np.load(os.path.join(val_path,'labels1val.npy'))
+    x_val = np.load(os.path.join(val_path,'inputs1val_v315.npy'))
+    y_val = np.load(os.path.join(val_path,'labels1val_v315.npy'))
+    y_val = np.round(y_val,4)
+    print('y_val shape', y_val.shape)
+    printFun(y_val)
+    y_true = np.zeros((len(y_val),1))
 
-    print('y_val', y_val.shape, y_val[1], y_val[5])
-    # y_true = [1, 1, 2, 4, 3, 5, 3, 3, 5,4,1,2]
-    # y_pred = [0, 1, 2, 2, 0, 4, 3, 4, 5,4,2,1]
+    #取最大值INDEX
+    for i in range(len(y_val)):
+        y_true[i] = np.argmax(y_val[i])
+    printFun(y_true)
+    print('y_true shape',name, y_true.shape)
 
-    #one hoting Encoding 轉�??�進制?��? 
-    ##以�?confusion_matrix ??classification metrics can't handle a mix of continuous-multioutput and multi-label-indicator targets ?��?
-    y_true = np.argmax(y_val, axis=1)
-    print('y_true',name, y_true.shape, y_true[10], y_true[50])
-
-    model = keras.models.load_model(base_path+'/model/res50_deepfashion2_cate_0204.h5')
+    #  ---------Model 跑預測值
+    model = keras.models.load_model(base_path+'/model/res50_deepfashion2_cate_0315.h5')
     y_pred = model.predict(x_val)
-    print("y_pred = ", y_pred.shape, y_pred[10], y_pred[50])
-    y_pred = np.argmax(y_pred, axis=1)
-    print("after arg y_pred = ", y_pred.shape, y_pred[10], y_pred[50])
-    
+    y_pred = np.round(y_pred,4)
+    print("y_pred shape = ", y_pred.shape)
+    printFun(y_pred)
+
+    #取最大值INDEX
+    max_pred = np.zeros((len(y_val),1))
+    for i in range(len(y_pred)):
+        max_pred[i] = np.argmax(y_pred[i])
+
+    print("after arg y_pred = ", max_pred.shape)
+    printFun(max_pred)
     sns.set(font_scale=0.4)
 
-    confusion = confusion_matrix(y_true, y_pred)
+    confusion = confusion_matrix(y_true, max_pred)
     print("----------")
     print('Confusion Matrix\n')
     print(confusion,type(confusion))
@@ -66,4 +79,4 @@ def predectTest(name, date):
     print(new_confu)
     
 
-predectTest('df2_cate','_0204')
+predectTest('df2_cate','_0315-2')

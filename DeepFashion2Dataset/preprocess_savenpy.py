@@ -3,7 +3,7 @@
 import os
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt  # plt 用於顯示圖片
+import matplotlib.pyplot as plt  # plt ?�於顯示?��?
 from keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from keras.utils import np_utils
 import pandas as pd
@@ -37,8 +37,8 @@ def ReadFile(data_path):
     print(len(data)) 
     return data
 
-# 資料路徑--------------------------------------------------------------------
-# base_path = 'C:\\Users\\Irene\\Documents\\ncu\\論文\\iMFAD'
+# 資�?路�?--------------------------------------------------------------------
+# base_path = 'C:\\Users\\Irene\\Documents\\ncu\\論�?\\iMFAD'
 # cate_dir = base_path + '\\cate_info_squzze'
 # data_path = base_path + '\\dataset'
 # tarintxt_path = base_path + '\\img_dir.txt'
@@ -53,16 +53,18 @@ train_path = base_path + '/train'
 train_top_dir_file = base_path + '/train/train_top_dir_file.txt'
 train_top_label_file = base_path + '/train/train_top_label_file.txt'
 
-train_x_file = base_path + '/train/train_x_file.txt'
-train_y_file = base_path + '/train/train_y_file.txt'
+train_x_file = base_path + '/train/train_x_file_v2.txt'
+train_y_file = base_path + '/train/train_y_file_v2.txt'
+val_x_file = base_path + '/validation/val_x_file.txt'
+val_y_file = base_path + '/validation/val_y_file.txt'
 
 val_path = base_path + '/validation'
 val_label_dir = base_path + '/validation/annos'
 val_top_dir_file = base_path + '/validation/val_dir_file.txt'
 val_top_label_file = base_path + '/validation/val_label_file.txt'
 
-# 製作訓練資料 標籤&資料集------------------------------------------------------
-img_per_amount = 10800#21600
+# 製�?訓練資�? 標籤&資�???-----------------------------------------------------
+img_per_amount = 5400#21600
 
 def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_data = ReadFile(x_data_path)
@@ -73,7 +75,7 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     print("---x_data len = ",name, len(x_data))
     print("---y_data len = ",name, len(y_data))
 
-    # 重新排列資料
+    # ?�新?��?資�?
     state = np.random.get_state()
     np.random.shuffle(x_data)
     np.random.set_state(state)
@@ -83,16 +85,16 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     print("---x_data len = ",name, len(x_data))
     print("---y_data len = ",name, len(y_data))
 
-    #設定input 維度
+    #設�?input 維度
     dim1 = 128
     dim2 = 128
     val_non_exist = []
 
-    ##---- 設定資料集----------------------------------------
-    # 存訓練資料x Npy----------------------------------------
+    ##---- 設�?資�???---------------------------------------
+    # 存�?練�??�x Npy----------------------------------------
     x_after_data = np.zeros((img_per_amount, dim1, dim2, 3))
     k = 0   # 第k筆npy
-    file_cot = 0    # 儲存檔案數
+    file_cot = 0    # ?��?檔�???    
     y_after_data = np.zeros((img_per_amount))
     output_file = open(data_path+'/'+ 'label'+ name +'.txt', 'w')
     non_exist = []
@@ -105,7 +107,7 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
                     else:
                         y_after_data[k] = y_data[i]
                     output_file.write(str(y_after_data[k])+'\n')
-                    img = cv2.imread(x)#讀圖
+                    img = cv2.imread(x)#讀??                    
                     img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
                     img = img_to_array(img)
                     x_after_data[k] = img
@@ -140,8 +142,8 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
 
 #preprocess(train_path+'/',train_path, train_top_dir_file, train_top_label_file, 'train_v2', 14) 
 #preprocess(val_path+'/',val_path, val_top_dir_file, val_top_label_file, 'val_v2', 14) 
-preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_v3', 14) 
-
+#preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_v4', 10) 
+preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_v4', 10) 
 
 
 

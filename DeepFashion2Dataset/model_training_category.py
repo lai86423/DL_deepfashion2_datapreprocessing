@@ -109,7 +109,7 @@ test_datagen = ImageDataGenerator()
 epochs = 100
 batch = 128 #128
 file_number = 8
-file_len = 10800 #21600
+file_len = 21600 #21600
 x_val = np.load(os.path.join(val_path,'inputs1val.npy'))
 y_val_category = np.load(os.path.join(val_path,'labels1val.npy'))
 

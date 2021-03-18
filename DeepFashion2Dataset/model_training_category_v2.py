@@ -19,6 +19,11 @@ from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping, T
 from keras import backend as K
 from keras import layers
 from keras.callbacks import EarlyStopping
+import tensorflow as tf
+config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
+sess = tf.compat.v1.Session(config=config)
+
+
 early_stopping = EarlyStopping(monitor='val_loss', patience=15, verbose=1)
 rlr = ReduceLROnPlateau(monitor='val_loss',
                         factor=0.5,
@@ -55,7 +60,7 @@ x = model_resnet.output
 x = layers.Dropout(0.5)(x)
 #category
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(14, activation='softmax', name='category')(x1)
+y1 = Dense(10, activation='softmax', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_resnet.input, outputs=y1)
@@ -84,8 +89,8 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
             seq = cnt // (set_len // batch_size + has_remainder) % file_nums #此次讀?�第seq?��?�?
             del inputs, labels_category
             #, labels_style, labels_category
-            inputs = np.load(os.path.join(trainpath, 'inputs' + str(seq + 1)+ 'train.npy'))
-            labels_category = np.load(os.path.join(trainpath, 'labels' + str(seq + 1)+ 'train.npy'))
+            inputs = np.load(os.path.join(trainpath, 'inputs' + str(seq + 1)+ 'train_v4.npy'))
+            labels_category = np.load(os.path.join(trainpath, 'labels' + str(seq + 1)+ 'train_v4.npy'))
         print("---generate trainfile arrays",seq,"--", inputs.shape)
         start = pos*batch_size
         end = min((pos+1)*batch_size, set_len-1)
@@ -106,12 +111,12 @@ train_datagen = ImageDataGenerator(rotation_range=30.,
 test_datagen = ImageDataGenerator()
 
 # 設�?超�??�HyperParameters
-epochs = 100
+epochs = 500
 batch = 128 #128
-file_number = 8
-file_len = 21600 #21600
-x_val = np.load(os.path.join(val_path,'inputs1val.npy'))
-y_val_category = np.load(os.path.join(val_path,'labels1val.npy'))
+file_number = 5
+file_len = 10800 #21600
+x_val = np.load(os.path.join(val_path,'inputs1val_v4.npy'))
+y_val_category = np.load(os.path.join(val_path,'labels1val_v4.npy'))
 
 history = final_model.fit_generator(
     generate_arrays_from_file(train_path, file_len, file_number, batch_size=batch),
@@ -119,18 +124,18 @@ history = final_model.fit_generator(
     epochs=epochs,
 
     validation_data=(x_val, y_val_category),
-    callbacks=[early_stopping, rlr]
+    #callbacks=[early_stopping, rlr]
     )
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
     plt.grid(True)
     plt.gca().set_ylim(0, 1.5)
-    plt.title('res50_deepfashion2_cate_0204')
-    plt.savefig(pltsave_path +'/res50_deepfashion2_cate_0204.png') 
+    plt.title('res50_deepfashion2_cate_0316-2')
+    plt.savefig(pltsave_path +'/res50_deepfashion2_cate_0316-2.png') 
     plt.show()
 
 
 plot_learning_curves(history)
-final_model.save('res50_deepfashion2_cate_0204.h5')
-final_model.save(base_path +'/model/res50_deepfashion2_cate_0204.h5')
+final_model.save('res50_deepfashion2_cate_0316-2.h5')
+final_model.save(base_path +'/model/res50_deepfashion2_cate_0316-2.h5')
