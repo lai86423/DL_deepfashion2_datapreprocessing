@@ -97,53 +97,65 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     file_cot = 0    # ?��?檔�???    
     y_after_data = np.zeros((img_per_amount))
     output_file = open(data_path+'/'+ 'label'+ name +'.txt', 'w')
+    x_output_file = open(data_path+'/'+ 'train'+ name +'.txt', 'w')
     non_exist = []
+    
     for i in range(len(x_data)):
-        x = x_path+x_data[i]
-        if os.path.isfile(x) and x != []:
-                if y_data[i] !='10' and y_data[i] !='11' and y_data[i] !='12' and y_data[i] !='13':
-                    if y_data[i]=='6':
-                        y_after_data[k] = '5'
-                    else:
-                        y_after_data[k] = y_data[i]
+        if (x_data[i].find('Up') == -1): 
+            #print("pass",i)
+            pass
+        else:    
+            #print("not break",i)
+            x = x_path+x_data[i]
+            if os.path.isfile(x) and x != []:
+                    if int(y_data[i])<= 6 :#and int(y_data[i])< 10: #'y_data[i] !='10' and y_data[i] !='11' and y_data[i] !='12' and y_data[i] !='13'
+                        if y_data[i]=='6':
+                            y_after_data[k] = '5'
+                        else:
+                            y_after_data[k] = y_data[i]
+
                     output_file.write(str(y_after_data[k])+'\n')
+                    x_output_file.write(str(x)+'\n')
                     img = cv2.imread(x)#讀??                    
                     img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
                     img = img_to_array(img)
                     x_after_data[k] = img
                     k += 1
-                #else:
-                #    print("--data 10111213")
-        else:
-            non_exist.append(i)
-            print("--Delete Not File--")                    
-        
-        if k == img_per_amount:
-            print("file_count", file_cot+1)
-            non_exist = list(set(non_exist))
-            print("non_exist",non_exist, len(non_exist))  
-            print(f'x training data', x_after_data.shape)
-            np.save(os.path.join(data_path,'inputs' + str(file_cot + 1) + name + '.npy'), x_after_data)
+                    #else:
+                    #    print("--data 10111213")
+            else:
+                non_exist.append(i)
+                print("--Delete Not File--")                    
             
-            print("Before One Hot y_after_data[k-1]",y_after_data[k-1], y_after_data.shape)
-            # One Hot Encoding
-            y_after_data = np_utils.to_categorical(y_after_data, group_num)
-            print("After One Hot y_after_data[k-1]",y_after_data[k-1], y_after_data.shape)
-            np.save(os.path.join(data_path,'labels' + str(file_cot + 1) + name + '.npy'), y_after_data)
- 
-            k = 0
-            file_cot += 1
-            y_after_data = np.zeros((img_per_amount))
+            if k == img_per_amount:
+                print("file_count", file_cot+1)
+                non_exist = list(set(non_exist))
+                print("non_exist",non_exist, len(non_exist))  
+                print(f'x training data', x_after_data.shape)
+                np.save(os.path.join(data_path,'inputs' + str(file_cot + 1) + name + '.npy'), x_after_data)
+                
+                print("Before One Hot y_after_data[k-1]",y_after_data[k-1], y_after_data.shape)
+                # One Hot Encoding
+                y_after_data = np_utils.to_categorical(y_after_data, group_num)
+                print("After One Hot y_after_data[k-1]",y_after_data[k-1], y_after_data.shape)
+                np.save(os.path.join(data_path,'labels' + str(file_cot + 1) + name + '.npy'), y_after_data)
+    
+                k = 0
+                file_cot += 1
+                y_after_data = np.zeros((img_per_amount))
     print(k)
     output_file.close() 
+    x_output_file.close() 
+
 
 
 # In[72]:
 
 #preprocess(train_path+'/',train_path, train_top_dir_file, train_top_label_file, 'train_v2', 14) 
 #preprocess(val_path+'/',val_path, val_top_dir_file, val_top_label_file, 'val_v2', 14) 
-#preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_v4', 10) 
-preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_v4', 10) 
+#preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_up_human', 7) 
+preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_up_human', 7) 
+#preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_down', 4) 
 
 
 
