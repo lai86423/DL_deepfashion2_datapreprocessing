@@ -53,18 +53,17 @@ train_path = base_path + '/train'
 train_top_dir_file = base_path + '/train/train_top_dir_file.txt'
 train_top_label_file = base_path + '/train/train_top_label_file.txt'
 
-train_x_file = base_path + '/train/train_x_file_v2.txt'
-train_y_file = base_path + '/train/train_y_file_v2.txt'
-val_x_file = base_path + '/validation/val_x_file.txt'
-val_y_file = base_path + '/validation/val_y_file.txt'
+train_x_file = base_path + '/train_x_0413_sleeve.txt'
+train_y_file = base_path + '/train_y_0413_sleeve.txt'
+val_x_file = base_path + '/val_x_0413_sleeve.txt'
+val_y_file = base_path + '/val_y_0413_sleeve.txt'
 
 val_path = base_path + '/validation'
 val_label_dir = base_path + '/validation/annos'
-val_top_dir_file = base_path + '/validation/val_dir_file.txt'
-val_top_label_file = base_path + '/validation/val_label_file.txt'
+
 
 # 製�?訓練資�? 標籤&資�???-----------------------------------------------------
-img_per_amount = 5400#21600
+img_per_amount = 678#21600
 
 def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_data = ReadFile(x_data_path)
@@ -108,12 +107,7 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
             #print("not break",i)
             x = x_path+x_data[i]
             if os.path.isfile(x) and x != []:
-                    if int(y_data[i])<= 6 :#and int(y_data[i])< 10: #'y_data[i] !='10' and y_data[i] !='11' and y_data[i] !='12' and y_data[i] !='13'
-                        if y_data[i]=='6':
-                            y_after_data[k] = '5'
-                        else:
-                            y_after_data[k] = y_data[i]
-
+                    y_after_data[k] = y_data[i]
                     output_file.write(str(y_after_data[k])+'\n')
                     x_output_file.write(str(x)+'\n')
                     img = cv2.imread(x)#讀??                    
@@ -149,12 +143,8 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
 
 
 
-# In[72]:
-
-#preprocess(train_path+'/',train_path, train_top_dir_file, train_top_label_file, 'train_v2', 14) 
-#preprocess(val_path+'/',val_path, val_top_dir_file, val_top_label_file, 'val_v2', 14) 
 #preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_up_human', 7) 
-preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_up_human', 7) 
+preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_0413_sleeve', 4) 
 #preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_down', 4) 
 
 

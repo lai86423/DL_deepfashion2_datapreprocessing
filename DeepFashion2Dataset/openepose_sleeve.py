@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 import re
 import detectColor
+import colorList
 import time
 #print(time.strftime('%m%d', time.localtime(time.time())))
 #print time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
@@ -28,7 +29,8 @@ new_val_img_dir = base_path + '/validation/image_new/'
 diff_L = []
 diff_N= [] 
 diff_s = []
-extra_num = 100
+del_img = []
+
 
 def ReadFile(data_path):
     data = []
@@ -96,71 +98,51 @@ try:
         point_halfdis = (point2 - point1)/2
         point_center = point1 + point_halfdis
         return int(point_halfdis), int(point_center)
-
-    # def mask_line(point1, point2, point3,image,thickness, save_path, img_name):
-    #     # Convert uint8 to float
-    #     foreground = image.astype(float)
-
-    #     mask = np.full(image.shape,(0,0,0), np.uint8)
-    #     # mask = np.zeros((image.shape[0], image.shape[1], 4), dtype=np.uint8)
-    #     cv2.line(mask, (point1[0],point1[1]), (point2[0],point2[1]), (255, 255, 255), thickness=thickness)
-    #     #alpha = cv2.bitwise_and(image, mask)
-    #     cv2.imwrite(save_path + img_name+'mask.jpg', mask)
-    #     # Normalize the alpha mask to keep intensity between 0 and 1
-    #     alpha = mask.astype(float)/255
-    #     cv2.imwrite(save_path + img_name+'alpha.jpg', alpha)
-    #     # Multiply the foreground with the alpha matte
-    #     foreground = cv2.multiply(alpha, foreground)
-
-    #     # Multiply the background with ( 1 - alpha )
-    #     #background = cv2.multiply(1.0 - alpha, background)
-
-    #     # Add the masked foreground and background.
-    #     #outImage = cv2.add(foreground, background)
-
-    #     # Display image
-    #     cv2.imwrite(save_path + img_name+'test.jpg', foreground/255)
-    #     cv2.waitKey(0)
-
-
-    # def mask_line(point1, point2, point3,image,thickness, save_path, img_name):
-    #     print("mask")
-    #     mask = np.full(image.shape,(0,0,0), np.uint8)
-    #     cv2.line(mask, (point1[0],point1[1]), (point2[0],point2[1]), (255, 255, 255), thickness=thickness)
-        
-    #     bitwiseAnd = cv2.bitwise_and(image, mask)
-    #     print(image.shape, mask.shape )
-
-    #     final = bitwiseAnd[int(min(point1[1],point2[1])):int(max(point1[1],point2[1])),int(min(point1[0],point2[0])):int(max(point1[0],point2[0]))]
-        
-    #     # # -----顏色辨識
-    #     color = detectColor.get_color(final,img_name+'line')
-    #     #color2 = detectColor.get_color(mask2,img_name+'line2')
-    #     print("## Color = ", color)
-    #     cv2.imwrite(save_path + img_name+ color+'.jpg', final)
-    #     #cv2.imshow("AND", bitwiseAnd)
-    #     cv2.waitKey(0)
     
     def mask_line2(point1, point2, point3,point4,image,thickness, save_path, img_name):
-        #上手臂上半1/4
+        #上手臂上半2/4
         mask1 = np.full(image.shape,(0,0,0), np.uint8)
         mid_point = (int((point1[0]+point2[0])/2),int((point1[1]+point2[1])/2))
-        mid_point = (int((point1[0]+mid_point[0])/2),int((point1[1]+mid_point[1])/2))
-        print(mid_point, point1, point2)  
-        cv2.line(mask1, (point1[0],point1[1]), mid_point, (255, 255, 255), thickness=thickness)
+        mid_point_up = (int((point1[0]+mid_point[0])/2),int((point1[1]+mid_point[1])/2))
+        hand_up1 = (int((mid_point_up[0]+point1[0])/2), int((mid_point_up[1]+point1[1])/2))
+        hand_up2 = (int((mid_point[0]+mid_point_up[0])/2), int((mid_point[1]+mid_point_up[1])/2)) 
+        cv2.line(mask1, hand_up1, hand_up2, (255, 255, 255), thickness=thickness)
         mask1 = cv2.bitwise_and(image, mask1) #shape (1320, 880, 3)
+        L = min(hand_up1[0],hand_up2[0])-6
+        R = max(hand_up1[0],hand_up2[0])+6
+        N = min(hand_up1[1],hand_up2[1])-6
+        S = max(hand_up1[1],hand_up2[1])+6 
+        #print(L,R,N,S)
+        mask1_end = mask1[int(N):int(S),int(L):int(R)]
+        #cv2.imwrite(save_path + img_name+ 'mask1.jpg', mask1_end)
+
         #下手臂上半1/4
         mask2 = np.full(image.shape,(0,0,0), np.uint8)
         mid_point2 = (int((point2[0]+point3[0])/2),int((point2[1]+point3[1])/2)) 
         mid_point2 = (int((point2[0]+mid_point2[0])/2),int((point2[1]+mid_point2[1])/2)) 
         cv2.line(mask2, (point2[0],point2[1]), mid_point2, (255, 255, 255), thickness=thickness)
         mask2 = cv2.bitwise_and(image, mask2) #shape (1320, 880, 3)
-        # #頸部肩膀下半
-        # mask3 = np.full(image.shape,(0,0,0), np.uint8)
-        # mid_point3 = (int((point1[0]+point4[0])/2),int((point1[1]+point4[1])/2))
-        # cv2.line(mask3, (point1[0],point1[1]), mid_point3, (255, 255, 255), thickness=thickness)
-        # mask3 = cv2.bitwise_and(image, mask3) #shape (1320, 880, 3)
+        L = min(point2[0],mid_point2[0])-6
+        R = max(point2[0],mid_point2[0])+6
+        N = min(point2[1],mid_point2[1])-6
+        S = max(point2[1],mid_point2[1])+6 
+        #print(L,R,N,S)
+        mask2_end = mask2[int(N):int(S),int(L):int(R)]
+        #cv2.imwrite(save_path + img_name+ 'mask2.jpg', mask2_end)
 
+        #頸部肩膀下半
+        mask3 = np.full(image.shape,(0,0,0), np.uint8)
+        mid_point3 = (int((point1[0]+point4[0])/2),int((point1[1]+point4[1])/2))
+        cv2.line(mask3, (point1[0],point1[1]), mid_point3, (255, 255, 255), thickness=thickness)
+        mask3 = cv2.bitwise_and(image, mask3) #shape (1320, 880, 3)
+        L = min(point1[0],mid_point3[0])-6
+        R = max(point1[0],mid_point3[0])+6
+        N = min(point1[1],mid_point3[1])-6
+        S = max(point1[1],mid_point3[1])+6 
+        #print(L,R,N,S)
+        mask3_end = mask3[int(N):int(S),int(L):int(R)]
+        color = detectColor.get_color(mask3_end,img_name+'color')
+        cv2.imwrite(save_path +'mask3'+ img_name+color+ '.jpg', image)
 
         BGR_img = mask1.reshape(-1,3)  #shape (1161600, 3)
         BGR_max = []
@@ -178,36 +160,41 @@ try:
                 tmp[im] += 1
             BGR_max2.append(tmp[1:].index(max(tmp[1:])) + 1) #算1~256 哪個數量最多
 
-        
-        # BGR_img3 = mask3.reshape(-1,3) 
-        # BGR_max3 = []
-        # for i in  range(3):
-        #     tmp = [0] * 256
-        #     for im in BGR_img3[:,i]:
-        #         tmp[im] += 1
-        #     BGR_max3.append(tmp[1:].index(max(tmp[1:])) + 1) #算1~256 哪個數量最多
-
         diff = [BGR_max[i] - BGR_max2[i] for i in range(len(BGR_max))]
-        #diff = [BGR_max2[i] - BGR_max3[i] for i in range(len(BGR_max2))]
         diff = [abs(number) for number in diff]
         diff = sum(diff)
         #final = cv2.bitwise_or(mask1, mask2)
-        #cv2.imwrite(save_path + img_name + '.jpg', final)
-        #cv2.imwrite(save_path + img_name+ str(diff)+ 'mask2.jpg', mask2)
-        #cv2.imshow("AND", bitwiseAnd)
+        #cv2.imwrite(save_path +'testError'+ img_name, final)
+        
         cv2.waitKey(0)
-        if 'L'in img_name:
-            if diff >=100:
-                diff_L.append((diff,img_name))
-        elif 'N' in img_name:
-            if diff >=100:
-                diff_N.append((diff,img_name))
+        # if 'L'in img_name:
+        #     if diff >=100:
+        #         diff_L.append((diff,img_name))
+        # elif 'N' in img_name:
+        #     if diff >=100:
+        #         diff_N.append((diff,img_name+str(BGR_max)+str(BGR_max2)))
+
+        # else:
+        #     if diff <100:
+        #         diff_s.append((diff,img_name+str(BGR_max)+str(BGR_max2)))
+    
+        color = detectColor.get_color(mask1_end,img_name+'sleeve')
+        color2 = detectColor.get_color(mask2_end,img_name+'sleeve')
+        #hsv_img = cv2.cvtColor(mask1_end, cv2.COLOR_BGR2HSV)
+
+        if color2 == 'skin' or color2 == 'orange':
+            if color == 'skin' or color == 'orange':
+                if 'N'not in img_name:
+                    diff_N.append((diff,img_name,color,color2))
+            else:
+                if 's'not in img_name:
+                    diff_s.append((diff,img_name,color,color2))
         else:
-            if diff <100:
-                diff_s.append((diff,img_name))
+            if 'L'not in img_name:
+                    diff_L.append((diff,img_name,color,color2))
+        #print(color,color2)
 
-
-    def openpose_preprocess(img_path, img_name, save_path):
+    def openpose_preprocess(img_path, img_name, save_path, line_wid):
         #bone_point = np.zeros((,3)) #neck, r_shouder, r_elbow, r_wrist, l_shouder, l_elbow, l_wrist, butt, r
         print(img_path)
         #  --------openpose前置作業---------------------------------------------------- 
@@ -226,6 +213,9 @@ try:
             elif "--" in curr_item and "--" not in next_item:
                 key = curr_item.replace('-','')
                 if key not in params: params[key] = next_item
+        
+        params["face"] = False
+        params["hand"] = False
         # Starting OpenPose
         opWrapper = op.WrapperPython()
         opWrapper.configure(params)
@@ -266,26 +256,27 @@ try:
                         
                 #---判斷同時也具有下身
                 if (datum.poseKeypoints[0][10] == a).any() == False :
-                    print("Have upper & lower")
-                    for i in range 30:
-                        mask_line2(datum.poseKeypoints[0][2], datum.poseKeypoints[0][3], datum.poseKeypoints[0][4],datum.poseKeypoints[0][1],  img, i, save_path, img_name)
+                    #print("Have upper & lower")
+                    #去除手彎狀況
+                    ab = np.array([datum.poseKeypoints[0][2][0], datum.poseKeypoints[0][2][1]]) - np.array([datum.poseKeypoints[0][3][0], datum.poseKeypoints[0][3][1]])
+                    ad = np.array([datum.poseKeypoints[0][4][0], datum.poseKeypoints[0][4][1]]) - np.array([datum.poseKeypoints[0][3][0], datum.poseKeypoints[0][3][1]])
+                    hand_dot = np.dot(ab,ad)
                         
-                        if 'L'in img_name:
-                            diff_L.append(diff)
-                        elif 'N' in img_name:
-                            diff_N.append(diff)
+                    #if datum.poseKeypoints[0][3][1] < datum.poseKeypoints[0][4][1]: #去除手腕位置>手肘的圖
+                    if hand_dot<=0:
+                        mask_line2(datum.poseKeypoints[0][2], datum.poseKeypoints[0][3], datum.poseKeypoints[0][4],datum.poseKeypoints[0][1],  img, line_wid, save_path, img_name)
+                        
+                    else:
+                        ab = np.array([datum.poseKeypoints[0][5][0], datum.poseKeypoints[0][5][1]]) - np.array([datum.poseKeypoints[0][6][0], datum.poseKeypoints[0][6][1]])
+                        ad = np.array([datum.poseKeypoints[0][7][0], datum.poseKeypoints[0][7][1]]) - np.array([datum.poseKeypoints[0][6][0], datum.poseKeypoints[0][6][1]])
+                        hand_dot = np.dot(ab,ad) 
+                        if hand_dot<=0:    
+                            mask_line2(datum.poseKeypoints[0][5], datum.poseKeypoints[0][6], datum.poseKeypoints[0][7],datum.poseKeypoints[0][1],  img, line_wid, save_path, img_name)
+                            
                         else:
-                            diff_s.append(diff)
-                    #---切開上身
-                    # 1.切上下
-                    try:
-                        legH = datum.poseKeypoints[0][13][1] - datum.poseKeypoints[0][12][1]
-                        if legH <=0:
-                            print("!!except legH")
-                            return 0
-                    except Exception as e:
-                        print("!!except legH",e)
-                        return 0  
+                            del_img.append(img_name)   
+         
+                    
         return 0
 
     # for i in range(len(old_img_file)-181893):
@@ -299,13 +290,34 @@ try:
     #     openpose_preprocess(val_path+'/'+old_val_img_file[i], old_val_img_label_file[i],'val'+str(i+1).zfill(6), new_val_img_dir, val_x_file, val_y_file)   
     #     openpose_preprocess(val_path+'/'+old_val_img_file[i], old_val_img_label_file[i],'val'+str(i+1).zfill(6), new_val_img_dir, val_x_file, val_y_file)   
     allFileList = os.listdir(train_path+'/sleeve_test/')
+ 
+    extra_num = 1000
+    total = 0
     
-    
-    for i in range(len(allFileList)):
-        
-        openpose_preprocess(train_path+'/sleeve_test/'+allFileList[i],allFileList[i], new_img_bone_dir)   
+    #line = [5,10,15,20,25,30]
+    print(len(allFileList))
+    line = [25]
+    for j in line :
+        #j = j+2
+        diff_L = []
+        diff_N= [] 
+        diff_s = []
+        del_img = []
+        filelist=['008932s.jpg','009142N.jpg','004582s.jpg', '006795N.jpg','004552s.jpg','005380N.jpg', '007944s.jpg','008931s.jpg'] #, '004584s.jpg', '003015s.jpg', '001757s.jpg', '000186L.jpg', '001429L.jpg', '002178L.jpg','001751L.jpg', '001162N.jpg'
+        print(len(filelist))
+        #for i in range(len(filelist)):
+        #   openpose_preprocess(train_path+'/sleeve_test/'+filelist[i],filelist[i], new_img_bone_dir, j)   
+        for i in range(len(allFileList)):
+           openpose_preprocess(train_path+'/sleeve_test/'+allFileList[i],allFileList[i], new_img_bone_dir, j)   
+        openpose_preprocess(train_path+'/sleeve_test/001007s.jpg','001007s', new_img_bone_dir, j)   
 
-    print(diff_L, diff_N, diff_s)
+        total = len(diff_L)+len(diff_N)+len(diff_s)
+        print(j,"j, diff=",diff_L, diff_N, diff_s, " len(diff_L)=", len(diff_L)," total=",total)
+        if total < extra_num:
+            extra_num = total
+            best_line_wid = j
+    print("best_line_wid",best_line_wid, extra_num)  
+    print("del_img", del_img, len(del_img))      
     train_x_file.close()
     train_y_file.close()
     val_x_file.close()

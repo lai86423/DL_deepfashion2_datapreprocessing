@@ -11,7 +11,7 @@ driver = webdriver.Chrome(options=options, executable_path=r'/home/irene/chromed
 #driver.get("https://www.google.com/")
 
 # 存圖位置
-local_path = 'C:\\Users\\Irene\\Documents\\ncu\\論文\\deepfashion2\\DeepFashion2Dataset\\img_shirt'
+local_path = 'C:\\Users\\Irene\\Documents\\ncu\\論文\\deepfashion2\\DeepFashion2Dataset\\img_pattern'
 # 爬取頁面網址 
 url = 'https://www.google.com/search?q=dress+shirts+for+women&tbm=isch&ved=2ahUKEwjP48uN26nvAhXXx4sBHR2fAqkQ2-cCegQIABAA&oq=Dress+Shirts+&gs_lcp=CgNpbWcQARgBMgQIABATMgQIABATMgQIABATMgQIABATMgQIABATMgQIABATMgQIABATMgQIABATMgQIABATMgQIABATUJWJJFiViSRgo5kkaABwAHgAgAFviAFvkgEDMC4xmAEAoAEBqgELZ3dzLXdpei1pbWfAAQE&sclient=img&ei=ctJKYM_iO9ePr7wPnb6KyAo&rlz=1C5CHFA_enTW885TW885'  
   

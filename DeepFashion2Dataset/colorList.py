@@ -48,6 +48,14 @@ def getColorList():
     color_list.append(upper_orange)
     dict['orange'] = color_list
 
+    # 膚色
+    lower_skin = np.array([0, 10, 60])
+    upper_skin = np.array([20, 150, 255])
+    color_list = []
+    color_list.append(lower_skin)
+    color_list.append(upper_skin)
+    dict['skin'] = color_list
+    
     # #橙色
     # lower_orange = np.array([11, 43, 46])
     # upper_orange = np.array([25, 255, 255])

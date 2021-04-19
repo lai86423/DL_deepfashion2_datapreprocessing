@@ -1,7 +1,7 @@
 import  cv2
 import numpy as np
 import colorList
-path ='/home/irene/deepfashion2/DeepFashion2Dataset/train/image_new/color/'
+path ='/home/irene/deepfashion2/DeepFashion2Dataset/train/color_test/'
 
 #處理圖片
 def get_color(frame,name):
@@ -13,7 +13,9 @@ def get_color(frame,name):
     for d in color_dict: #輪流計算顏色面積
         #切割出指定顏色區域
         mask = cv2.inRange(hsv,color_dict[d][0],color_dict[d][1]) 
-        #cv2.imwrite(path+name+d+'.jpg',mask)
+        #if d =='skin' or d == 'orange':
+            #print(d)
+            #cv2.imwrite(path+name+d+'.jpg',mask)
         #影像二值化
         binary = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)[1]
         #影像膨脹
