@@ -44,7 +44,7 @@ rlr = ReduceLROnPlateau(monitor='val_loss',
 # pltsave_path = '/home/irene/TheiMaterialistFashionAttributeDataset/plt_img'
 #linux-------
 base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
-train_path = base_path + '/train'
+trainpath = base_path + '/train'
 val_path = base_path + '/validation'
 pltsave_path = base_path+'/plt_img'
 # Model -----------------------------------------------------------------------
@@ -61,7 +61,7 @@ x = model_resnet.output
 x = layers.Dropout(0.5)(x)
 #category
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(7, activation='softmax', name='category')(x1)
+y1 = Dense(4, activation='softmax', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_resnet.input, outputs=y1)
@@ -90,8 +90,8 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
             seq = cnt // (set_len // batch_size + has_remainder) % file_nums #此次讀?�第seq?��?�?
             del inputs, labels_category
             #, labels_style, labels_category
-            inputs = np.load(os.path.join(trainpath, 'inputs' + str(seq + 1)+ 'train_up_human.npy'))
-            labels_category = np.load(os.path.join(trainpath, 'labels' + str(seq + 1)+ 'train_up_human.npy'))
+            inputs = np.load(os.path.join(trainpath, 'inputs' + str(seq + 1)+ 'train_0413_sleeve.npy'))
+            labels_category = np.load(os.path.join(trainpath, 'labels' + str(seq + 1)+ 'train_0413_sleeve.npy'))
         print("---generate trainfile arrays",seq,"--", inputs.shape)
         start = pos*batch_size
         end = min((pos+1)*batch_size, set_len-1)
@@ -114,13 +114,13 @@ test_datagen = ImageDataGenerator()
 # 設�?超�??�HyperParameters
 epochs = 300
 batch = 128 #128
-file_number = 8
-file_len = 5400#21600
-x_val = np.load(os.path.join(val_path,'inputs1val_up_human.npy'))
-y_val_category = np.load(os.path.join(val_path,'labels1val_up_human.npy'))
+file_number = 3
+file_len = 676#21600
+x_val = np.load(os.path.join(trainpath,'inputs1val_0413_sleeve.npy'))
+y_val_category = np.load(os.path.join(trainpath,'labels1val_0413_sleeve.npy'))
 
 history = final_model.fit_generator(
-    generate_arrays_from_file(train_path, file_len, file_number, batch_size=batch),
+    generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
     steps_per_epoch=file_number * (file_len / batch),
     epochs=epochs,
 
@@ -132,11 +132,11 @@ def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
     plt.grid(True)
     plt.gca().set_ylim(0, 1.5)
-    plt.title('res50_deepfashion2_cate_0323_up_human')
-    plt.savefig(pltsave_path +'/res50_deepfashion2_cate_0323_up_human.png') 
+    plt.title('res50_deepfashion2_0419_sleeve')
+    plt.savefig(pltsave_path +'/res50_deepfashion2_0419_sleeve.png') 
     plt.show()
 
 
 plot_learning_curves(history)
-final_model.save('res50_deepfashion2_cate_0323_up_human.h5')
-final_model.save(base_path +'/model/res50_deepfashion2_cate_0323_up_human.h5')
+final_model.save('res50_deepfashion2_0419_sleeve.h5')
+final_model.save(base_path +'/model/res50_deepfashion2_0419_sleeve.h5')

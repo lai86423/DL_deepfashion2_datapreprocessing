@@ -23,10 +23,6 @@ train_y_file = base_path + '/train_y_0413_hand.txt'
 train_x_sleeve = open(train_path+'/train_x_0413_sleeve.txt',"w")
 train_y_sleeve = open(train_path+'/train_y_0413_sleeve.txt',"w")
 
-train_x_s = open(base_path+'/train_x_0413_sleeve.txt',"w")
-train_y_s = open(base_path+'/train_y_0413_sleeve.txt',"w")
-train_x_s = open(base_path+'/train_x_0413_sleeve.txt',"w")
-train_y_s = open(base_path+'/train_y_0413_sleeve.txt',"w")
 
 def ReadFile(data_path):
     data = []
@@ -59,7 +55,7 @@ def SearchImginDoc():
             train_y_file.write(label[data.index(filename)]+'\n')
             #print(data.index(filename))
 
-def RiviseIndex():
+def RiviseIndex_Sleeve():
     x_data = ReadFile(train_x_file)
     y_data = ReadFile(train_y_file)
     x_after_data = []
@@ -82,29 +78,31 @@ def RiviseIndex():
         train_x_sleeve.write(x_after_data[i]+'\n')
         train_y_sleeve.write(y_after_data[i]+'\n')
 
-x_data = ReadFile(train_x_file)
-y_data = ReadFile(train_y_file)
-group_num = 4
-dim1 = 128
-dim2 = 128
-x_path = train_path + '/img_hand/'
-x_after_data = np.zeros((len(x_data), dim1, dim2, 3))
-y_after_data = np.zeros((len(x_data)))
-# x_data = ReadFile(train_x_s)
-# y_data = ReadFile(train_y_s)
-# v_x_data = ReadFile(val_x_s)
-# v_y_data = ReadFile(val_y_s)
-for k in range(len(x_data)): 
-    #print("not break",i)
-    x = x_path+x_data[k]
-    if os.path.isfile(x) and x != []:
-            img = cv2.imread(x)#讀??                    
-            img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
-            img = img_to_array(img)
-            x_after_data[k] = img
-    print("Before One Hot y_data[k-1]",y_data[k])
-    # One Hot Encoding
-    y_after_data = np_utils.to_categorical(y_data[k], group_num)
-    print("After One Hot y_after_data[k-1]",y_after_data[k], y_after_data.shape)
-np.save(os.path.join(data_path,'train_0413_sleeve_inputs.npy'), x_after_data)
-np.save(os.path.join(train_path,'train_0413_sleeve_labels.npy'), y_after_data)
+if __name__ == '__main__':
+    RiviseIndex_Sleeve() 
+# x_data = ReadFile(train_x_file)
+# y_data = ReadFile(train_y_file)
+# group_num = 4
+# dim1 = 128
+# dim2 = 128
+# x_path = train_path + '/img_hand/'
+# x_after_data = np.zeros((len(x_data), dim1, dim2, 3))
+# y_after_data = np.zeros((len(x_data)))
+# # x_data = ReadFile(train_x_s)
+# # y_data = ReadFile(train_y_s)
+# # v_x_data = ReadFile(val_x_s)
+# # v_y_data = ReadFile(val_y_s)
+# for k in range(len(x_data)): 
+#     #print("not break",i)
+#     x = x_path+x_data[k]
+#     if os.path.isfile(x) and x != []:
+#             img = cv2.imread(x)#讀??                    
+#             img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
+#             img = img_to_array(img)
+#             x_after_data[k] = img
+#     print("Before One Hot y_data[k-1]",y_data[k])
+#     # One Hot Encoding
+#     y_after_data = np_utils.to_categorical(y_data[k], group_num)
+#     print("After One Hot y_after_data[k-1]",y_after_data[k], y_after_data.shape)
+# np.save(os.path.join(data_path,'train_0413_sleeve_inputs.npy'), x_after_data)
+# np.save(os.path.join(train_path,'train_0413_sleeve_labels.npy'), y_after_data)

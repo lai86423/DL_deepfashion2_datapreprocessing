@@ -38,13 +38,8 @@ old_img_label_file = ReadFile(train_top_label_file)
 version ='0413'
 train_file_clean = open(base_path + '/train/train_file_clean_'+version+'.txt',"a")
 
-train_x_file = open(base_path + '/train/train_x_file_'+version+'.txt',"a")
-train_y_file = open(base_path + '/train/train_y_file_'+version+'.txt',"a")
-
 old_val_img_file = ReadFile(val_top_dir_file)
 old_val_img_label_file = ReadFile(val_top_label_file)
-val_x_file = open(base_path + '/validation/val_x_file'+version+'.txt',"a")
-val_y_file = open(base_path + '/validation/val_y_file'+version+'.txt',"a")
 
 try:
     # Import Openpose (Windows/Ubuntu/OSX)
@@ -94,7 +89,7 @@ try:
         point_center = point1 + point_halfdis
         return int(point_halfdis), int(point_center)
 
-    def openpose_preprocess(img_path,img_label, img_name, new_x_file, new_y_file):
+    def openpose_preprocess(img_path,img_label, img_name, new_x_file):
         #bone_point = np.zeros((,3)) #neck, r_shouder, r_elbow, r_wrist, l_shouder, l_elbow, l_wrist, butt, r
         print(img_path)
         if  img_label !='10' and img_label !='11' and img_label !='12' and img_label !='13': #先過濾掉連身類標籤
@@ -215,14 +210,12 @@ try:
 
 
     for i in range(len(old_img_file)):
-        i = i+ 11250
-        openpose_preprocess(train_path+'/'+old_img_file[i], old_img_label_file[i],re.sub('image/','',old_img_file[i]), train_file_clean, train_y_file)   
+        i = i+ 47730
+        openpose_preprocess(train_path+'/'+old_img_file[i], old_img_label_file[i],re.sub('image/','',old_img_file[i]), train_file_clean)   
 
 
-    train_x_file.close()
-    train_y_file.close()
-    val_x_file.close()
-    val_y_file.close()
+    train_file_clean.close()
+
 except Exception as e:
         print(e)
         sys.exit(-1)
