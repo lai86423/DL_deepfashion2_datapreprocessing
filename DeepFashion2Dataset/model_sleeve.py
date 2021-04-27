@@ -69,13 +69,27 @@ final_model = Model(inputs=model_resnet.input, outputs=y1)
 #print(final_model.summary())
 
 #opt = SGD(lr=0.001, momentum=0.9, nesterov=True)
-opt = Adam(learning_rate=0.01)
+opt = Adam(learning_rate=0.001)
 
 final_model.compile(optimizer=opt,loss={'category':'categorical_crossentropy'
                                         },
                     metrics={'category':['accuracy','top_k_categorical_accuracy'] 
          }
                     ) #default:top-5
+
+# Loading the data-------------------------------------------------------------
+train_datagen = ImageDataGenerator(rotation_range=30.,
+                                    shear_range=0.2,
+                                    zoom_range=0.2,
+                                    width_shift_range=0.2,
+                                    height_shift_range=0.2,
+                                    horizontal_flip=True,
+                                    brightness_range=[0.3,0.7]
+                                    #vertical_flip = True
+                                    )
+
+test_datagen = ImageDataGenerator()
+
 
 def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_size=32):
     
@@ -90,8 +104,8 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
             seq = cnt // (set_len // batch_size + has_remainder) % file_nums #此次讀?�第seq?��?�?
             del inputs, labels_category
             #, labels_style, labels_category
-            inputs = np.load(os.path.join(trainpath, 'inputs' + str(seq + 1)+ 'train_0413_sleeve.npy'))
-            labels_category = np.load(os.path.join(trainpath, 'labels' + str(seq + 1)+ 'train_0413_sleeve.npy'))
+            inputs = np.load(os.path.join(trainpath, 'inputs' + str(seq + 1)+ '0420_train_sleeve.npy'))
+            labels_category = np.load(os.path.join(trainpath, 'labels' + str(seq + 1)+ '0420_train_sleeve.npy'))
         print("---generate trainfile arrays",seq,"--", inputs.shape)
         start = pos*batch_size
         end = min((pos+1)*batch_size, set_len-1)
@@ -102,25 +116,29 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
         print("batch label shape ",batch_labels_category.shape)
         yield (batch_inputs, batch_labels_category)
 
-# Loading the data-------------------------------------------------------------
-train_datagen = ImageDataGenerator(rotation_range=30.,
-                                    shear_range=0.2,
-                                    zoom_range=0.2,
-                                    width_shift_range=0.2,
-                                    height_shift_range=0.2,
-                                    horizontal_flip=True)
-test_datagen = ImageDataGenerator()
+
 
 # 設�?超�??�HyperParameters
 epochs = 300
-batch = 128 #128
-file_number = 3
-file_len = 676#21600
-x_val = np.load(os.path.join(trainpath,'inputs1val_0413_sleeve.npy'))
-y_val_category = np.load(os.path.join(trainpath,'labels1val_0413_sleeve.npy'))
+batch = 32 #128
+file_number = 4
+file_len = 2500#21600
+x_val = np.load(os.path.join(trainpath,'inputs1val_sleeve_0426nobg.npy'))
+y_val_category = np.load(os.path.join(trainpath,'labels1val_sleeve_0426nobg.npy'))
+
+x_train = np.load(os.path.join(trainpath,'inputs1train_sleeve_0426nobg.npy'))
+y_train = np.load(os.path.join(trainpath,'labels1train_sleeve_0426nobg.npy'))
+
+train_generator = train_datagen.flow(
+    x_train,
+    y=y_train,
+    batch_size=batch,
+    shuffle=True,
+)
 
 history = final_model.fit_generator(
-    generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
+    #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
+    train_generator,
     steps_per_epoch=file_number * (file_len / batch),
     epochs=epochs,
 
@@ -132,11 +150,11 @@ def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
     plt.grid(True)
     plt.gca().set_ylim(0, 1.5)
-    plt.title('res50_deepfashion2_0419_sleeve')
-    plt.savefig(pltsave_path +'/res50_deepfashion2_0419_sleeve.png') 
+    plt.title('res50_deepfashion2_0427_sleeve_nobg')
+    plt.savefig(pltsave_path +'/res50_deepfashion2_0427_sleeve_nobg.png') 
     plt.show()
 
 
 plot_learning_curves(history)
-final_model.save('res50_deepfashion2_0419_sleeve.h5')
-final_model.save(base_path +'/model/res50_deepfashion2_0419_sleeve.h5')
+final_model.save('res50_deepfashion2_0427_sleeve_nobg.h5')
+final_model.save(base_path +'/model/res50_deepfashion2_0427_sleeve_nobg.h5')

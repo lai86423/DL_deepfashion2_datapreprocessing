@@ -35,7 +35,7 @@ def ReadFile(data_path):
 
 old_img_file = ReadFile(train_top_dir_file)
 old_img_label_file = ReadFile(train_top_label_file)
-version ='0413'
+version ='0420'
 train_file_clean = open(base_path + '/train/train_file_clean_'+version+'.txt',"a")
 
 old_val_img_file = ReadFile(val_top_dir_file)

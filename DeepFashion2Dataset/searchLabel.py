@@ -17,11 +17,11 @@ train_path = base_path + '/train'
 save_path_body = base_path + '/train/img_body/' 
 save_path_hand = base_path + '/train/img_hand/' 
 
-train_x_file = base_path + '/train_x_0413_hand.txt'
-train_y_file = base_path + '/train_y_0413_hand.txt'
+train_x_file_dir = train_path + '/0420_train_x.txt'
+train_y_file_dir = train_path + '/0420_train_y.txt'
 
-train_x_sleeve = open(train_path+'/train_x_0413_sleeve.txt',"w")
-train_y_sleeve = open(train_path+'/train_y_0413_sleeve.txt',"w")
+train_x_sleeve = open(train_path+'/0420_train_x_sleeve.txt',"w")
+train_y_sleeve = open(train_path+'/0420_train_y_sleeve.txt',"w")
 
 
 def ReadFile(data_path):
@@ -45,19 +45,18 @@ def ReadFile_Label(data_path):
     print(len(data),len(label)) 
     return data,label
 
-data,label =ReadFile_Label(base_path + '/train/train_file_clean_0413.txt')
-
-def SearchImginDoc():
+def SearchImginDoc(data, label,train_x_file,train_y_file):
     for filename in os.listdir(save_path_hand):
-        filename = re.sub('.jpg','',filename) + '.jpg'
+        #filename = re.sub('.jpg','',filename) + '.jpg'
+        #print(filename)
         if filename in data:
-            train_x_file.write(filename+'\n')
-            train_y_file.write(label[data.index(filename)]+'\n')
+            train_x_file.write(str(filename)+'\n')
+            train_y_file.write(label[data.index(str(filename))]+'\n')
             #print(data.index(filename))
 
 def RiviseIndex_Sleeve():
-    x_data = ReadFile(train_x_file)
-    y_data = ReadFile(train_y_file)
+    x_data = ReadFile(train_x_file_dir)
+    y_data = ReadFile(train_y_file_dir)
     x_after_data = []
     y_after_data = []
     for i in range(len(x_data)):
@@ -79,30 +78,9 @@ def RiviseIndex_Sleeve():
         train_y_sleeve.write(y_after_data[i]+'\n')
 
 if __name__ == '__main__':
-    RiviseIndex_Sleeve() 
-# x_data = ReadFile(train_x_file)
-# y_data = ReadFile(train_y_file)
-# group_num = 4
-# dim1 = 128
-# dim2 = 128
-# x_path = train_path + '/img_hand/'
-# x_after_data = np.zeros((len(x_data), dim1, dim2, 3))
-# y_after_data = np.zeros((len(x_data)))
-# # x_data = ReadFile(train_x_s)
-# # y_data = ReadFile(train_y_s)
-# # v_x_data = ReadFile(val_x_s)
-# # v_y_data = ReadFile(val_y_s)
-# for k in range(len(x_data)): 
-#     #print("not break",i)
-#     x = x_path+x_data[k]
-#     if os.path.isfile(x) and x != []:
-#             img = cv2.imread(x)#讀??                    
-#             img = cv2.resize(img, (dim1, dim2), interpolation=cv2.INTER_LINEAR)
-#             img = img_to_array(img)
-#             x_after_data[k] = img
-#     print("Before One Hot y_data[k-1]",y_data[k])
-#     # One Hot Encoding
-#     y_after_data = np_utils.to_categorical(y_data[k], group_num)
-#     print("After One Hot y_after_data[k-1]",y_after_data[k], y_after_data.shape)
-# np.save(os.path.join(data_path,'train_0413_sleeve_inputs.npy'), x_after_data)
-# np.save(os.path.join(train_path,'train_0413_sleeve_labels.npy'), y_after_data)
+    # data,label =ReadFile_Label(base_path + '/train/train_file_clean_0420.txt') 
+    # train_x_file = open(train_x_file_dir,"w")
+    # train_y_file = open(train_y_file_dir,"w")
+    # SearchImginDoc(data,label,train_x_file,train_y_file)
+
+    RiviseIndex_Sleeve()

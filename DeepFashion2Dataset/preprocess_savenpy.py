@@ -50,20 +50,20 @@ def ReadFile(data_path):
 
 base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 train_path = base_path + '/train'
-train_top_dir_file = base_path + '/train/train_top_dir_file.txt'
-train_top_label_file = base_path + '/train/train_top_label_file.txt'
+# train_top_dir_file = base_path + '/train/train_top_dir_file.txt'
+# train_top_label_file = base_path + '/train/train_top_label_file.txt'
 
-train_x_file = train_path + '/train_x_0413_sleeve.txt'
-train_y_file = train_path + '/train_y_0413_sleeve.txt'
-val_x_file = train_path + '/val_x_0413_sleeve.txt'
-val_y_file = train_path + '/val_y_0413_sleeve.txt'
+train_x_file = train_path + '/0420_train_x_sleeve.txt'
+train_y_file = train_path + '/0420_train_y_sleeve.txt'
+val_x_file = train_path + '/0420_val_x_sleeve.txt'
+val_y_file = train_path + '/0420_val_y_sleeve.txt'
 
 val_path = base_path + '/validation'
 val_label_dir = base_path + '/validation/annos'
 
 
 # 製�?訓練資�? 標籤&資�???-----------------------------------------------------
-img_per_amount = 676#21600
+img_per_amount = 10800#21600
 
 def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_data = ReadFile(x_data_path)
@@ -101,7 +101,7 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     
     for i in range(len(x_data)):
         #print("not break",i)
-        x = x_path+x_data[i]+'.jpg'
+        x = x_path+x_data[i]
         #print(x)
         if os.path.isfile(x) and x != []:
             y_after_data[k] = y_data[i]
@@ -141,8 +141,8 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
 
 
 #preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_up_human', 7) 
-preprocess(train_path+'/img_hand/', train_path, train_x_file, train_y_file, 'train_0413_sleeve', 4) 
-preprocess(train_path+'/img_hand/', train_path, val_x_file, val_y_file, 'val_0413_sleeve', 4) 
+preprocess(train_path+'/img_hand_new/', train_path, train_x_file, train_y_file, 'train_sleeve_0426nobg', 4) 
+#preprocess(train_path+'/img_hand_new/', train_path, val_x_file, val_y_file, 'val_sleeve_0426nobg', 4) 
 #preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_down', 4) 
 
 
