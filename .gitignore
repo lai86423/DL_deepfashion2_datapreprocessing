@@ -1,9 +1,12 @@
 # my file ignore
 DeepFashion2Dataset/test
 DeepFashion2Dataset/train
+DeepFashion2Dataset/train_copy
 DeepFashion2Dataset/validation
 DeepFashion2Dataset/json_for_validation
 DeepFashion2Dataset/model
+DeepFashion2Dataset/errorPredict_img
+
 *.zip
 *.h5
 
