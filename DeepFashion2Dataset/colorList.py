@@ -22,7 +22,7 @@ def getColorList():
     color_list = []
     color_list.append(lower_gray)
     color_list.append(upper_gray)
-    dict['gray']=color_list
+    dict['Gray']=color_list
 
     # 白色
     lower_white = np.array([0, 0, 221])
@@ -33,12 +33,20 @@ def getColorList():
     dict['white'] = color_list
 
     #紅色
-    lower_red = np.array([156, 43, 46])
+    lower_red = np.array([160, 43, 46])
     upper_red = np.array([180, 255, 255])
     color_list = []
     color_list.append(lower_red)
     color_list.append(upper_red)
     dict['red']=color_list
+
+    #粉色
+    lower_red = np.array([144, 20, 46])
+    upper_red = np.array([168, 255, 255])
+    color_list = []
+    color_list.append(lower_red)
+    color_list.append(upper_red)
+    dict['Pink']=color_list
 
     # 橘色
     lower_orange = np.array([0, 43, 180])
@@ -48,13 +56,13 @@ def getColorList():
     color_list.append(upper_orange)
     dict['orange'] = color_list
 
-    # 膚色
-    lower_skin = np.array([0, 10, 60])
-    upper_skin = np.array([20, 150, 255])
-    color_list = []
-    color_list.append(lower_skin)
-    color_list.append(upper_skin)
-    dict['skin'] = color_list
+    # # 膚色
+    # lower_skin = np.array([0, 10, 60])
+    # upper_skin = np.array([20, 150, 255])
+    # color_list = []
+    # color_list.append(lower_skin)
+    # color_list.append(upper_skin)
+    # dict['skin'] = color_list
     
     # #橙色
     # lower_orange = np.array([11, 43, 46])
@@ -70,7 +78,7 @@ def getColorList():
     color_list = []
     color_list.append(lower_brown)
     color_list.append(upper_brown)
-    dict['brown'] = color_list
+    dict['L_brown'] = color_list
 
     #黃色
     lower_yellow = np.array([26, 43, 46])
@@ -102,7 +110,7 @@ def getColorList():
     color_list = []
     color_list.append(lower_blue)
     color_list.append(upper_blue)
-    dict['blue'] = color_list
+    dict['Blue'] = color_list
 
     # 紫色
     lower_purple = np.array([125, 43, 46])

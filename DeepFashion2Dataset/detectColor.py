@@ -1,6 +1,8 @@
 import  cv2
 import numpy as np
 import colorList
+import os
+import remove_bg
 path ='/home/irene/deepfashion2/DeepFashion2Dataset/train/color_test/'
 
 #處理圖片
@@ -29,14 +31,22 @@ def get_color(frame,name):
         if sum > maxsum :
             #最多面積之顏色 判斷為該顏色
             maxsum = sum
-            color = d
+            color = d[:1]
 
     return color
 
 
 if __name__ == '__main__':
     base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
-    new_img_dir = base_path + '/train/image_new/'
-    filename='000015_Up.jpg'
-    frame = cv2.imread(new_img_dir+filename)
-    print(get_color(frame,filename))
+    train_path = base_path + '/train'    
+    img_dir = train_path+'/img_shoes/'
+    new_img_dir = train_path+'/img_shoes_color/'
+    AllFile = os.listdir(img_dir)
+    for filename in AllFile: 
+        if filename.endswith(".png") or filename.endswith(".jpg"):
+            try:
+                frame = cv2.imread(img_dir+filename) 
+                new_frame = remove_bg.cutimgBg(frame)
+                cv2.imwrite(new_img_dir + get_color(new_frame,filename) + '_' +filename , new_frame)
+            except:
+                pass

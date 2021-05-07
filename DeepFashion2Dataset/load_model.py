@@ -11,22 +11,33 @@ from keras.models import Model
 import keras
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+import re
 #linux-------
 base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 train_path = base_path + '/train'
 val_path = base_path + '/validation'
 pltsave_path = base_path+'/plt_img'
-
+error_img_path = base_path+ '/errorPredict_img/sleeve/'
 # y_true = [1, 1, 2, 4, 3, 5, 3, 3, 5,4,1,2]
 # y_pred = [0, 1, 2, 2, 0, 4, 3, 4, 5,4,2,1]
 def printFun(a):
     for i in range(20):
         print(a[i])
 
+def ReadFile(data_path):
+    data = []
+    with open(data_path, 'r') as f:
+        for line in f:
+            data.append(line[:-1])
+    print(len(data)) 
+    return data
 def predectTest(name, date):
     #Load Data
-    x_val = np.load(os.path.join(val_path,'inputs1val_v315.npy'))
-    y_val = np.load(os.path.join(val_path,'labels1val_v315.npy'))
+    x_val = np.load(os.path.join(train_path,'inputs1val_sleeve_0426nobg.npy'))
+    y_val = np.load(os.path.join(train_path,'labels1val_sleeve_0426nobg.npy'))
+
+    x_data = ReadFile(train_path+'/trainval_sleeve_0426nobg.txt')
+    error_img_data = open(error_img_path+'/sleeve_0426nobg.txt','w')
     y_val = np.round(y_val,4)
     print('y_val shape', y_val.shape)
     printFun(y_val)
@@ -39,7 +50,7 @@ def predectTest(name, date):
     print('y_true shape',name, y_true.shape)
 
     #  ---------Model 跑預測值
-    model = keras.models.load_model(base_path+'/model/res50_deepfashion2_cate_0315.h5')
+    model = keras.models.load_model(base_path+'/model/res50_deepfashion2_0427_sleeve_bright0.7-1.3_degree10.h5')
     y_pred = model.predict(x_val)
     y_pred = np.round(y_pred,4)
     print("y_pred shape = ", y_pred.shape)
@@ -49,6 +60,11 @@ def predectTest(name, date):
     max_pred = np.zeros((len(y_val),1))
     for i in range(len(y_pred)):
         max_pred[i] = np.argmax(y_pred[i])
+        if y_true[i] != max_pred[i]:
+            x_data[i] = re.sub('/home/irene/deepfashion2/DeepFashion2Dataset/train/img_hand_new/','', x_data[i])
+            print(x_data[i])
+            error_img_data.write(x_data[i]+'#'+str(y_true[i])+str(max_pred[i])+'\n')
+            cv2.imwrite(error_img_path+x_data[i]+ str(y_true[i])+str(max_pred[i])+'.jpg', x_val[i])
 
     print("after arg y_pred = ", max_pred.shape)
     printFun(max_pred)
@@ -79,4 +95,4 @@ def predectTest(name, date):
     print(new_confu)
     
 
-predectTest('df2_cate','_0315-2')
+predectTest('df2_sleeve','0427_sleeve_bright0.7-1.3_degree10')

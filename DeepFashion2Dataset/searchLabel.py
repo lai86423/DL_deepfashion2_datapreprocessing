@@ -22,7 +22,8 @@ train_y_file_dir = train_path + '/0420_train_y.txt'
 
 train_x_sleeve = open(train_path+'/0420_train_x_sleeve.txt',"w")
 train_y_sleeve = open(train_path+'/0420_train_y_sleeve.txt',"w")
-
+train_x_down = open(train_path+'/x_down.txt',"w")
+train_y_down = open(train_path+'/y_down.txt',"w")
 
 def ReadFile(data_path):
     data = []
@@ -77,10 +78,31 @@ def RiviseIndex_Sleeve():
         train_x_sleeve.write(x_after_data[i]+'\n')
         train_y_sleeve.write(y_after_data[i]+'\n')
 
+def RiviseIndex_Down():
+    x_data = ReadFile(train_x_file_dir)
+    y_data = ReadFile(train_y_file_dir)
+    x_after_data = []
+    y_after_data = []
+    for i in range(len(x_data)):
+        if int(y_data[i])>6 :#and int(y_datga[i])< 10: #'y_data[i] !='10' and y_data[i] !='11' and y_data[i] !='12' and y_data[i] !='13'
+            x_after_data.append(x_data[i]) 
+            if y_data[i]=='7' :
+                y_after_data.append('1') #短褲
+            elif y_data[i]=='8':
+                y_after_data.append('2') #長褲
+            elif y_data[i]=='9':
+                y_after_data.append('3') #裙子
+            else:
+                y_after_data.append('0')
+
+    for i in range(len(x_after_data)):
+        train_x_down.write(x_after_data[i]+'\n')
+        train_y_down.write(y_after_data[i]+'\n')
+
 if __name__ == '__main__':
     # data,label =ReadFile_Label(base_path + '/train/train_file_clean_0420.txt') 
     # train_x_file = open(train_x_file_dir,"w")
     # train_y_file = open(train_y_file_dir,"w")
     # SearchImginDoc(data,label,train_x_file,train_y_file)
 
-    RiviseIndex_Sleeve()
+    RiviseIndex_Down()

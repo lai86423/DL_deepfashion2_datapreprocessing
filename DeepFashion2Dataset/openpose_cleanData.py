@@ -20,11 +20,11 @@ val_label_dir = base_path + '/validation/annos'
 val_top_dir_file = base_path + '/validation/val_dir_file.txt'
 val_top_label_file = base_path + '/validation/val_label_file.txt'
 
-save_path = base_path + '/train/img_clean/' 
-save_path_whole = base_path + '/train/img_clean_whole/' 
-save_path_up = base_path + '/train/img_clean_up/' 
-save_path_down = base_path + '/train/img_clean_down/' 
-other_path = base_path + '/train/img_del/' 
+save_path = val_path + '/img_clean/' 
+save_path_whole = val_path + '/img_clean_whole/' 
+save_path_up = val_path + '/img_clean_up/' 
+save_path_down = val_path + '/img_clean_down/' 
+#other_path = base_path + '/train/img_del/' 
 def ReadFile(data_path):
     data = []
     with open(data_path, 'r') as f:
@@ -33,13 +33,15 @@ def ReadFile(data_path):
     print(len(data)) 
     return data
 
-old_img_file = ReadFile(train_top_dir_file)
-old_img_label_file = ReadFile(train_top_label_file)
-version ='0420'
-train_file_clean = open(base_path + '/train/train_file_clean_'+version+'.txt',"a")
+version ='0505'
+
+# old_img_file = ReadFile(train_top_dir_file)
+# old_img_label_file = ReadFile(train_top_label_file)
+# train_file_clean = open(base_path + '/train/train_file_clean_'+version+'.txt',"a")
 
 old_val_img_file = ReadFile(val_top_dir_file)
 old_val_img_label_file = ReadFile(val_top_label_file)
+val_file_clean = open(val_path + '/val_file_clean_'+version+'.txt',"a")
 
 try:
     # Import Openpose (Windows/Ubuntu/OSX)
@@ -155,19 +157,19 @@ try:
                         #判斷正常站立
                         if datum.poseKeypoints[0][12][0] < datum.poseKeypoints[0][9][0]:
                             print("!!not front phto")
-                            cv2.imwrite(other_path+ img_name, img)
+                            #cv2.imwrite(other_path+ img_name, img)
                             return 0
                         if datum.poseKeypoints[0][13][1] < datum.poseKeypoints[0][12][1]:
                             print("!!knee > butt")
-                            cv2.imwrite(other_path+ img_name, img)
+                            #cv2.imwrite(other_path+ img_name, img)
                             return 0
                         if datum.poseKeypoints[0][14][1] < datum.poseKeypoints[0][13][1]:
                             print("!!ankle > knee")
-                            cv2.imwrite(other_path+ img_name, img)
+                            #cv2.imwrite(other_path+ img_name, img)
                             return 0
                         if datum.poseKeypoints[0][13][0] < datum.poseKeypoints[0][10][0] or  datum.poseKeypoints[0][14][0] < datum.poseKeypoints[0][11][0]:
                             print("!!ankle > knee")
-                            cv2.imwrite(other_path+ img_name, img)
+                            #cv2.imwrite(other_path+ img_name, img)
                             return 0
                     except Exception as e:
                         print("!!normal down excepttion",e)
@@ -186,12 +188,12 @@ try:
                     try:
                         if datum.poseKeypoints[0][5][0] < datum.poseKeypoints[0][2][0]:
                             print("!!not front phto")
-                            cv2.imwrite(other_path+ img_name, img)
+                            #cv2.imwrite(other_path+ img_name, img)
                             return 0
             
                         if datum.poseKeypoints[0][4][1] < datum.poseKeypoints[0][3][1] and datum.poseKeypoints[0][7][1] < datum.poseKeypoints[0][6][1]:
                             print("!!both hands are bending")
-                            cv2.imwrite(other_path+ img_name, img)
+                            #cv2.imwrite(other_path+ img_name, img)
                             return 0
 
                     except Exception as e:
@@ -209,13 +211,14 @@ try:
                     new_x_file.write(str(img_name)+'#'+img_label+'\n')  
 
 
-    for i in range(len(old_img_file)):
-        i = i+ 47730
-        openpose_preprocess(train_path+'/'+old_img_file[i], old_img_label_file[i],re.sub('image/','',old_img_file[i]), train_file_clean)   
+    for i in range(len(old_val_img_file)):
+        #i = i+ 47730
+        #openpose_preprocess(train_path+'/'+old_img_file[i], old_img_label_file[i],re.sub('image/','',old_img_file[i]), train_file_clean)   
+        openpose_preprocess(val_path+'/'+old_val_img_file[i], old_val_img_label_file[i],re.sub('image/','',old_val_img_file[i]), val_file_clean)   
 
 
-    train_file_clean.close()
-
+    #train_file_clean.close()
+    val_file_clean.close()
 except Exception as e:
         print(e)
         sys.exit(-1)
