@@ -143,7 +143,7 @@ train_y_file = train_path + '/train_y_coat_revise_long.txt'
 pattern_x_dir = train_path + '/pattern_x.txt'
 pattern_y_dir = train_path + '/pattern_y.txt'
 
-pattern_path ='/home/irene/deepfashion2/DeepFashion2Dataset/img_pattern/'
+pattern_path ='/home/irene/deepfashion2/DeepFashion2Dataset/train/img_pattern/'
 preprocess(pattern_path, train_path, pattern_x_dir, pattern_y_dir, 'train_pattern', 6)  
 
 
