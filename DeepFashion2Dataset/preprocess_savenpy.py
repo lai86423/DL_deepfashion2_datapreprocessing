@@ -56,10 +56,8 @@ img_per_amount = int(3581*0.2) #378#21600 #928
 def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_data = ReadFile(x_data_path)
     y_data = ReadFile(y_data_path)
-    datasize = int(len(x_data)*0.205)
+    datasize = int(len(x_data)*0.8)
     #y_data = np.load(y_data_path, allow_pickle=True)
-    x_data = x_data[-datasize:]
-    y_data = y_data[-datasize:]
 
     print("---x_data len = ",name, len(x_data))
     print("---y_data len = ",name, len(y_data))
@@ -71,6 +69,11 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     state = np.random.get_state()
     np.random.shuffle(y_data)
     
+    x_data = x_data[:datasize]
+    y_data = y_data[:datasize]
+    # x_data = x_data[-datasize:]
+    # y_data = y_data[-datasize:]
+
     print("---x_data len = ",name, len(x_data))
     print("---y_data len = ",name, len(y_data))
 
@@ -90,10 +93,10 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     non_exist = []
     
     for i in range(datasize):
-        #print("not break",i)
         x = x_path+x_data[i]
         #print(x)
         if os.path.isfile(x) and x != []:
+            print(x)
             y_after_data[k] = y_data[i]
             output_file.write(str(y_after_data[k])+'\n')
             x_output_file.write(str(x)+'\n')
@@ -133,9 +136,14 @@ train_x_file = train_path + '/train_x_coat_revise_long.txt'
 train_y_file = train_path + '/train_y_coat_revise_long.txt' 
 #preprocess(train_path+'/image_new/', train_path, train_x_file, train_y_file, 'train_up_human', 7) 
 #preprocess(train_path+'/img_body/', train_path, train_x_file, train_y_file, 'train_coat_0519_nohand', 2)
-preprocess(train_path+'/img_body/', val_path, train_x_file, train_y_file, 'val_coat_0519_nohand', 2)  
+#preprocess(train_path+'/img_body/', val_path, train_x_file, train_y_file, 'val_coat_0519_nohand', 2)  
 #preprocess(val_path+'/img_leg_new/', val_path, val_x_file, val_y_file, 'val_down_0509_clean', 4) 
 #preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_down', 4) 
 
+pattern_x_dir = train_path + '/pattern_x.txt'
+pattern_y_dir = train_path + '/pattern_y.txt'
+
+pattern_path ='/home/irene/deepfashion2/DeepFashion2Dataset/img_pattern/'
+preprocess(pattern_path, train_path, pattern_x_dir, pattern_y_dir, 'train_pattern', 6)  
 
 

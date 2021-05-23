@@ -62,7 +62,7 @@ x = layers.Dropout(0.5)(x)
 #category
 #5/10 神經元從512顆改為4試看看
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(4, activation='softmax', name='category')(x1)
+y1 = Dense(6, activation='softmax', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_net.input, outputs=y1)
