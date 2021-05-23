@@ -50,7 +50,7 @@ def predectTest(name, date):
     print('y_true shape',name, y_true.shape)
 
     #  ---------Model 跑預測值
-    model = keras.models.load_model(base_path+'/model/res50_deepfashion2_0427_sleeve_bright0.7-1.3_degree10.h5')
+    model = keras.models.load_model(base_path+'/model/resnet50_down_0519_rotate5.h5')
     y_pred = model.predict(x_val)
     y_pred = np.round(y_pred,4)
     print("y_pred shape = ", y_pred.shape)

@@ -3,13 +3,12 @@ import numpy as np
 import colorList
 import os
 import remove_bg
-path ='/home/irene/deepfashion2/DeepFashion2Dataset/train/color_test/'
-
 #處理圖片
 def get_color(frame,name):
     #print('go in get_color')
     hsv = cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
     maxsum = -100
+    color_area = {}
     color = None
     color_dict = colorList.getColorList()
     for d in color_dict: #輪流計算顏色面積
@@ -39,8 +38,8 @@ def get_color(frame,name):
 if __name__ == '__main__':
     base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
     train_path = base_path + '/train'    
-    img_dir = train_path+'/img_shoes/'
-    new_img_dir = train_path+'/img_shoes_color/'
+    img_dir = train_path+'/img_body/'
+    new_img_dir = train_path+'/img_body_small/'
     AllFile = os.listdir(img_dir)
     for filename in AllFile: 
         if filename.endswith(".png") or filename.endswith(".jpg"):
@@ -49,4 +48,5 @@ if __name__ == '__main__':
                 new_frame = remove_bg.cutimgBg(frame)
                 cv2.imwrite(new_img_dir + get_color(new_frame,filename) + '_' +filename , new_frame)
             except:
+                print("no")
                 pass

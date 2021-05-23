@@ -26,7 +26,6 @@ import efficientnet.keras as efn
 config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
 sess = tf.compat.v1.Session(config=config)
 
-
 early_stopping = EarlyStopping(monitor='val_loss', patience=15, verbose=1)
 rlr = ReduceLROnPlateau(monitor='val_loss',
                         factor=0.5,
@@ -35,29 +34,21 @@ rlr = ReduceLROnPlateau(monitor='val_loss',
                         mode='max',
                         epsilon=0.0001)
 
-# 資�?路�?--------------------------------------------------------------------
-#base_path = 'C:\\Users\\Irene\\Documents\\ncu\\論�?\\The iMaterialist Fashion Attribute Dataset'
-#data_path = 'C:\\Users\\Irene\\Documents\\ncu\\論�?\\The iMaterialist Fashion Attribute Dataset\\dataset_v0119'
-#base_path = 'C:\\Users\\Irene\\Documents\\ncu\\graduate\\iMFAD'
-#data_path = base_path + '\\final_dataset'
-#linux-------
-# base_path = '/home/irene/TheiMaterialistFashionAttributeDataset'
-# data_path = '/home/irene/TheiMaterialistFashionAttributeDataset/final_dataset'
-# pltsave_path = '/home/irene/TheiMaterialistFashionAttributeDataset/plt_img'
 #linux-------
 base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 trainpath = base_path + '/train'
 val_path = base_path + '/validation'
 pltsave_path = base_path+'/plt_img'
+
 # Model -----------------------------------------------------------------------
-#model_net = ResNet50(weights='imagenet', include_top=False, pooling='avg')
-model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 時，可調整輸入圖片的尺寸（長寬需不小於 32）
-  weights="./efficientnet-l2_noisy-student_notop.h5", 
-  #weights='imagenet',
-  include_top=False,# 是否包含最後的全連接層 (fully-connected layer)
-  drop_connect_rate=0,  # the hack
-  pooling='avg'# 當 include_top=False 時，最後的輸出是否 pooling（可選 'avg' 或 'max'）
-)
+model_net = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+# model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 時，可調整輸入圖片的尺寸（長寬需不小於 32）
+#   weights="./efficientnet-l2_noisy-student_notop.h5", 
+#   #weights='imagenet',
+#   include_top=False,# 是否包含最後的全連接層 (fully-connected layer)
+#   drop_connect_rate=0,  # the hack
+#   pooling='avg'# 當 include_top=False 時，最後的輸出是否 pooling（可選 'avg' 或 'max'）
+# )
 #model_net = tf.keras.applications.EfficientNetB7(input_shape=(128,128,3),weights="imagenet",include_top=False, pooling='avg',classifier_activation="softmax")
 #freeze some layers
 #for layer in model_net.layers[:-12]:
@@ -69,7 +60,7 @@ model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 
 x = model_net.output
 x = layers.Dropout(0.5)(x)
 #category
-#5/5 神經元從512顆改為4試看看
+#5/10 神經元從512顆改為4試看看
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
 y1 = Dense(4, activation='softmax', name='category')(x1)
 
@@ -95,8 +86,8 @@ train_datagen = ImageDataGenerator(#rotation_range=30.,
                                     width_shift_range=0.2,
                                     height_shift_range=0.2,
                                     horizontal_flip=True,
-                                    brightness_range= [0.7, 1.3],
-                                    rotation_range = 10,
+                                    brightness_range= [0.8, 1.2],
+                                    rotation_range = 5,
                                     channel_shift_range=100
                                     #preprocessing_function = myFunc
                                     #vertical_flip = True
@@ -131,13 +122,13 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
 # 設�?超�??�HyperParameters
 epochs = 300
 batch = 32 #128
-file_number = 4
-file_len = 2500#21600
-x_val = np.load(os.path.join(trainpath,'inputs1val_sleeve_0503_clean.npy'))
-y_val_category = np.load(os.path.join(trainpath,'labels1val_sleeve_0503_clean.npy'))
+file_number = 1
+file_len = 3776#21600
+x_val = np.load(os.path.join(val_path,'inputs1val_down_0509_clean.npy'))
+y_val_category = np.load(os.path.join(val_path,'labels1val_down_0509_clean.npy'))
 
-x_train = np.load(os.path.join(trainpath,'inputs1train_sleeve_0503_clean.npy'))
-y_train = np.load(os.path.join(trainpath,'labels1train_sleeve_0503_clean.npy'))
+x_train = np.load(os.path.join(trainpath,'inputs1train_down_0509_clean.npy'))
+y_train = np.load(os.path.join(trainpath,'labels1train_down_0509_clean.npy'))
 
 train_generator = train_datagen.flow(
     x_train,
@@ -155,7 +146,7 @@ history = final_model.fit_generator(
     callbacks=[early_stopping, rlr]
     )
 
-name ='EfficientNetL2_0505_sleeve_noStepperEP_2'
+name ='ResNet50_down_0523'
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
