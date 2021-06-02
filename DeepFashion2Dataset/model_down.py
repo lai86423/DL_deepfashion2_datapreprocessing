@@ -123,17 +123,21 @@ batch = 32 #128
 file_number = 1
 k = 5
 file_len = 3776#21600
-train_data = np.load(os.path.join(trainpath,'inputs1train_sleeve_0503_clean.npy'))
-train_target = np.load(os.path.join(trainpath,'labels1train_sleeve_0503_clean.npy'))
+x_val = np.load(os.path.join(val_path,'inputs1val_down_0509_clean.npy'))
+y_val_category = np.load(os.path.join(val_path,'labels1val_down_0509_clean.npy'))
+x_train = np.load(os.path.join(trainpath,'inputs1train_down_0509_clean.npy'))
+y_train = np.load(os.path.join(trainpath,'labels1train_down_0509_clean.npy'))
 
-print(len(train_data), len(train_target))
+train_data = np.concatenate([x_train, x_val], axis = 0)
+train_target = np.concatenate([y_train, y_val_category], axis = 0)
+print(len(x_train),len(x_val),len(train_data))
 
 num_val_samples = len(train_data) // k
 train_acc_list = []
 val_acc_list = []
 
 for i in range(k):
-    print("preprocessing fold #",i+1)
+    print("preprocessing fold #",i)
     val_data = train_data[i * num_val_samples: (i+1) * num_val_samples]
     val_target = train_target[i * num_val_samples: (i+1) * num_val_samples]
 
@@ -164,7 +168,7 @@ for i in range(k):
     print("train Accuracy = ", train_acc_list)
     print("val Accuracy = ", val_acc_list)
 
-name ='resNet50_sleeve_kfold'
+name ='resNet50_down_kfold'
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
@@ -177,5 +181,4 @@ def plot_learning_curves(history):
 plot_learning_curves(history)
 print("train Accuracy = ", train_acc_list)
 print("val Accuracy = ", val_acc_list)
-print("Average val Accuracy = ", np.mean(val_acc_list))
 final_model.save(base_path +'/model/+'+ name +'.h5')

@@ -42,13 +42,13 @@ pltsave_path = base_path+'/plt_img'
 
 # Model -----------------------------------------------------------------------
 model_net = ResNet50(weights='imagenet', include_top=False, pooling='avg')
-model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 時，可調整輸入圖片的尺寸（長寬需不小於 32）
-  weights="./efficientnet-l2_noisy-student_notop.h5", 
-  #weights='imagenet',
-  include_top=False,# 是否包含最後的全連接層 (fully-connected layer)
-  drop_connect_rate=0,  # the hack
-  pooling='avg'# 當 include_top=False 時，最後的輸出是否 pooling（可選 'avg' 或 'max'）
-)
+# model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 時，可調整輸入圖片的尺寸（長寬需不小於 32）
+#   weights="./efficientnet-l2_noisy-student_notop.h5", 
+#   #weights='imagenet',
+#   include_top=False,# 是否包含最後的全連接層 (fully-connected layer)
+#   drop_connect_rate=0,  # the hack
+#   pooling='avg'# 當 include_top=False 時，最後的輸出是否 pooling（可選 'avg' 或 'max'）
+# )
 #model_net = tf.keras.applications.EfficientNetB7(input_shape=(128,128,3),weights="imagenet",include_top=False, pooling='avg',classifier_activation="softmax")
 #freeze some layers
 #for layer in model_net.layers[:-12]:
@@ -59,15 +59,13 @@ model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 
 #build the category classification branch in the model
 x = model_net.output
 x = layers.Dropout(0.5)(x)
-#category
-#5/10 神經元從512顆改為4試看看
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(6, activation='softmax', name='category')(x1)
+y1 = Dense(7, activation='softmax', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_net.input, outputs=y1)
 
-print(final_model.summary())
+#print(final_model.summary())
 
 #opt = SGD(lr=0.001, momentum=0.9, nesterov=True)
 opt = Adam(learning_rate=0.001)
@@ -87,7 +85,7 @@ train_datagen = ImageDataGenerator(#rotation_range=30.,
                                     height_shift_range=0.2,
                                     horizontal_flip=True,
                                     brightness_range= [0.8, 1.2],
-                                    rotation_range = 5,
+                                    rotation_range = 10,
                                     channel_shift_range=100
                                     #preprocessing_function = myFunc
                                     #vertical_flip = True
@@ -120,33 +118,59 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
         yield (batch_inputs, batch_labels_category)
 
 # 設�?超�??�HyperParameters
-epochs = 300
+epochs = 100
 batch = 32 #128
 file_number = 1
-file_len = 3776#21600
-x_val = np.load(os.path.join(val_path,'inputs1val_down_0509_clean.npy'))
-y_val_category = np.load(os.path.join(val_path,'labels1val_down_0509_clean.npy'))
+#file_len = 3776#21600
+train_data = np.load(os.path.join(trainpath,'inputs1train_pattern2.npy'))
+train_target = np.load(os.path.join(trainpath,'labels1train_pattern2.npy'))
+print(len(train_data),len(train_target))
+k = 5
+num_val_samples = len(train_data) // k
+train_acc_list = []
+val_acc_list = []
+# print(len(x_data),len(y_data))
+# datasize = int(len(x_data)*0.8)
+# x_train = x_data[:datasize]
+# y_train = y_data[:datasize]
+# datasize = int(len(x_data)*0.2)
+# x_val = x_data[-datasize:]
+# y_val_category = y_data[-datasize:]
+# print(len(x_train),len(y_train),len(x_val),len(y_val_category))
+for i in range(k):
+    print("preprocessing fold #",i)
+    val_data = train_data[i * num_val_samples: (i+1) * num_val_samples]
+    val_target = train_target[i * num_val_samples: (i+1) * num_val_samples]
 
-x_train = np.load(os.path.join(trainpath,'inputs1train_down_0509_clean.npy'))
-y_train = np.load(os.path.join(trainpath,'labels1train_down_0509_clean.npy'))
+    partial_train_data = np.concatenate([train_data[:i * num_val_samples], train_data[(i+1) * num_val_samples:]], axis = 0)
+    partial_train_target = np.concatenate([train_target[:i * num_val_samples], train_target[(i+1) * num_val_samples:]], axis = 0)
 
-train_generator = train_datagen.flow(
-    x_train,
-    y=y_train,
-    batch_size=batch,
-    shuffle=True,
-)
-
-history = final_model.fit_generator(
-    #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
-    train_generator,
-    #steps_per_epoch=file_number * (file_len / batch),
-    epochs=epochs,
-    validation_data=(x_val, y_val_category),
-    callbacks=[early_stopping, rlr]
+    train_generator = train_datagen.flow(
+        partial_train_data,
+        y=partial_train_target,
+        batch_size=batch,
+        shuffle=True,
     )
 
-name ='EfficientNetL2_down_0519_rotate5'
+    history = final_model.fit_generator(
+        #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
+        train_generator,
+        #steps_per_epoch=file_number * (file_len / batch),
+        epochs=epochs,
+        validation_data=(val_data, val_target),
+        callbacks=[early_stopping, rlr]
+        )
+    accu= np.sort(history.history['accuracy'])
+    accu_max = np.mean(accu[-2:])
+    val_accu = history.history['val_accuracy']
+    val_accu_max = np.mean(val_accu[-2:])
+    train_acc_list.append(accu_max)
+    val_acc_list.append(val_accu_max)
+    print("train Accuracy = ", train_acc_list)
+    print("val Accuracy = ", val_acc_list)
+
+
+name ='ResNet50_pattern_0531_kfold'
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
@@ -157,4 +181,7 @@ def plot_learning_curves(history):
     plt.show()
 
 plot_learning_curves(history)
-final_model.save(base_path +'/model/+'+ name +'.h5')
+print("train Accuracy = ", train_acc_list)
+print("val Accuracy = ", val_acc_list)
+print("Average val Accuracy = ", np.mean(val_acc_list))
+final_model.save(base_path +'/model/'+ name +'.h5')

@@ -51,12 +51,12 @@ val_label_dir = base_path + '/validation/annos'
 
 
 # 製�?訓練資�? 標籤&資�???-----------------------------------------------------
-img_per_amount = int(3581*0.2) #378#21600 #928
+img_per_amount = int(3593) #378#21600 #928
 
 def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_data = ReadFile(x_data_path)
     y_data = ReadFile(y_data_path)
-    datasize = int(len(x_data)*0.8)
+    #datasize = int(len(x_data)*0.2)
     #y_data = np.load(y_data_path, allow_pickle=True)
 
     print("---x_data len = ",name, len(x_data))
@@ -69,8 +69,8 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     state = np.random.get_state()
     np.random.shuffle(y_data)
     
-    x_data = x_data[:datasize]
-    y_data = y_data[:datasize]
+    #x_data = x_data[:datasize]
+    #y_data = y_data[:datasize]
     # x_data = x_data[-datasize:]
     # y_data = y_data[-datasize:]
 
@@ -92,11 +92,11 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
     x_output_file = open(data_path+'/'+ 'train'+ name +'.txt', 'w')
     non_exist = []
     
-    for i in range(datasize):
+    for i in range(len(x_data)):
         x = x_path+x_data[i]
         #print(x)
         if os.path.isfile(x) and x != []:
-            print(x)
+            #print(x)
             y_after_data[k] = y_data[i]
             output_file.write(str(y_after_data[k])+'\n')
             x_output_file.write(str(x)+'\n')
@@ -127,6 +127,7 @@ def preprocess(x_path, data_path, x_data_path, y_data_path, name, group_num):
             k = 0
             file_cot += 1
             y_after_data = np.zeros((img_per_amount))
+
     print(k)
     output_file.close() 
     x_output_file.close() 
@@ -140,10 +141,11 @@ train_y_file = train_path + '/train_y_coat_revise_long.txt'
 #preprocess(val_path+'/img_leg_new/', val_path, val_x_file, val_y_file, 'val_down_0509_clean', 4) 
 #preprocess(val_path+'/image_new/', val_path, val_x_file, val_y_file, 'val_down', 4) 
 
-pattern_x_dir = train_path + '/pattern_x.txt'
-pattern_y_dir = train_path + '/pattern_y.txt'
+pattern_x_dir = train_path + '/pattern_x2.txt'
+pattern_y_dir = train_path + '/pattern_y2.txt'
 
 pattern_path ='/home/irene/deepfashion2/DeepFashion2Dataset/train/img_pattern/'
-preprocess(pattern_path, train_path, pattern_x_dir, pattern_y_dir, 'train_pattern', 6)  
+preprocess(pattern_path, train_path, pattern_x_dir, pattern_y_dir, 'train_pattern2', 7)  
+#preprocess(pattern_path, train_path, pattern_x_dir, pattern_y_dir, 'val_pattern', 6)  
 
 

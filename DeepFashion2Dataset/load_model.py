@@ -17,7 +17,7 @@ base_path ='/home/irene/deepfashion2/DeepFashion2Dataset'
 train_path = base_path + '/train'
 val_path = base_path + '/validation'
 pltsave_path = base_path+'/plt_img'
-error_img_path = base_path+ '/errorPredict_img/sleeve/'
+error_img_path = base_path+ '/errorPredict_img/pattern/'
 # y_true = [1, 1, 2, 4, 3, 5, 3, 3, 5,4,1,2]
 # y_pred = [0, 1, 2, 2, 0, 4, 3, 4, 5,4,2,1]
 def printFun(a):
@@ -33,11 +33,20 @@ def ReadFile(data_path):
     return data
 def predectTest(name, date):
     #Load Data
-    x_val = np.load(os.path.join(train_path,'inputs1val_sleeve_0426nobg.npy'))
-    y_val = np.load(os.path.join(train_path,'labels1val_sleeve_0426nobg.npy'))
+    #x_val = np.load(os.path.join(train_path,'inputs1val_sleeve_0426nobg.npy'))
+    #y_val = np.load(os.path.join(train_path,'labels1val_sleeve_0426nobg.npy'))
 
-    x_data = ReadFile(train_path+'/trainval_sleeve_0426nobg.txt')
-    error_img_data = open(error_img_path+'/sleeve_0426nobg.txt','w')
+    x_data = np.load(os.path.join(train_path,'inputs1train_pattern.npy'))
+    y_data = np.load(os.path.join(train_path,'labels1train_pattern.npy'))
+    print(len(x_data),len(y_data))
+    datasize = int(2861*0.2)
+    x_val = x_data[-datasize:]
+    y_val = y_data[-datasize:]
+    print(len(x_val),len(y_val))
+
+
+    #x_data = ReadFile(train_path+'/trainval_sleeve_0426nobg.txt')
+    #error_img_data = open(error_img_path+'/pattern0524.txt','w')
     y_val = np.round(y_val,4)
     print('y_val shape', y_val.shape)
     printFun(y_val)
@@ -50,7 +59,7 @@ def predectTest(name, date):
     print('y_true shape',name, y_true.shape)
 
     #  ---------Model 跑預測值
-    model = keras.models.load_model(base_path+'/model/resnet50_down_0519_rotate5.h5')
+    model = keras.models.load_model(base_path+'/model/EfficientNetL2_pattern_0524.h5')
     y_pred = model.predict(x_val)
     y_pred = np.round(y_pred,4)
     print("y_pred shape = ", y_pred.shape)
@@ -61,10 +70,10 @@ def predectTest(name, date):
     for i in range(len(y_pred)):
         max_pred[i] = np.argmax(y_pred[i])
         if y_true[i] != max_pred[i]:
-            x_data[i] = re.sub('/home/irene/deepfashion2/DeepFashion2Dataset/train/img_hand_new/','', x_data[i])
-            print(x_data[i])
-            error_img_data.write(x_data[i]+'#'+str(y_true[i])+str(max_pred[i])+'\n')
-            cv2.imwrite(error_img_path+x_data[i]+ str(y_true[i])+str(max_pred[i])+'.jpg', x_val[i])
+            #x_val[i] = re.sub('/home/irene/deepfashion2/DeepFashion2Dataset/train/img_hand_new/','', x_data[i])
+            #print(x_val[i])
+            #error_img_data.write(str(y_true[i])+str(max_pred[i])+'\n')
+            cv2.imwrite(error_img_path+str(i)+ str(y_true[i])+str(max_pred[i])+'.jpg', x_val[i])
 
     print("after arg y_pred = ", max_pred.shape)
     printFun(max_pred)
@@ -95,4 +104,4 @@ def predectTest(name, date):
     print(new_confu)
     
 
-predectTest('df2_sleeve','0427_sleeve_bright0.7-1.3_degree10')
+predectTest('df2_pattern','0524')
