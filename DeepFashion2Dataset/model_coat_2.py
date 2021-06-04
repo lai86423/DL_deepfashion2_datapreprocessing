@@ -60,7 +60,7 @@ model_net = ResNet50(weights='imagenet', include_top=False, pooling='avg')
 x = model_net.output
 x = layers.Dropout(0.5)(x)
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(4, activation='softmax', name='category')(x1)
+y1 = Dense(2, activation='sigmoid', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_net.input, outputs=y1)
@@ -70,7 +70,7 @@ final_model = Model(inputs=model_net.input, outputs=y1)
 #opt = SGD(lr=0.001, momentum=0.9, nesterov=True)
 opt = Adam(learning_rate=0.001)
 
-final_model.compile(optimizer=opt,loss={'category':'categorical_crossentropy'
+final_model.compile(optimizer=opt,loss={'category':'binary_crossentropy'
                                         },
                     metrics={'category':['accuracy'] 
          }
@@ -123,11 +123,12 @@ batch = 32 #128
 file_number = 1
 k = 5
 file_len = 3776#21600
-x_val = np.load(os.path.join(val_path,'inputs1val_down_0602.npy'))
-y_val_category = np.load(os.path.join(val_path,'labels1val_down_0602.npy'))
-x_train = np.load(os.path.join(trainpath,'inputs1train_down_0602.npy'))
-y_train = np.load(os.path.join(trainpath,'labels1train_down_0602.npy'))
 
+x_val = np.load(os.path.join(val_path,'inputs5val_coat_0519_nohand.npy'))
+y_val_category = np.load(os.path.join(val_path,'labels5val_coat_0519_nohand.npy'))
+
+x_train = np.load(os.path.join(trainpath,'inputs1train_coat_0519_nohand.npy'))
+y_train = np.load(os.path.join(trainpath,'labels1train_coat_0519_nohand.npy'))
 train_data = np.concatenate([x_train, x_val], axis = 0)
 train_target = np.concatenate([y_train, y_val_category], axis = 0)
 print(len(x_train),len(x_val),len(train_data))
@@ -137,7 +138,7 @@ train_acc_list = []
 val_acc_list = []
 
 for i in range(k):
-    print("preprocessing fold #",i)
+    print("preprocessing fold #",i+1)
     val_data = train_data[i * num_val_samples: (i+1) * num_val_samples]
     val_target = train_target[i * num_val_samples: (i+1) * num_val_samples]
 
@@ -168,7 +169,7 @@ for i in range(k):
     print("train Accuracy = ", train_acc_list)
     print("val Accuracy = ", val_acc_list)
 
-name ='resNet50_down_kfold'
+name ='resNet50_coat_kfold_0602'
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
