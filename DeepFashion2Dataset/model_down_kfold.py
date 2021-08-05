@@ -22,7 +22,8 @@ from keras.callbacks import EarlyStopping
 import tensorflow as tf
 from PIL import Image
 import efficientnet.keras as efn 
-import time
+from sklearn.metrics import f1_score, confusion_matrix
+import seaborn as sns
 
 config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
 sess = tf.compat.v1.Session(config=config)
@@ -61,7 +62,7 @@ model_net = tf.keras.applications.EfficientNetB7(input_shape=(128,128,3),weights
 x = model_net.output
 x = layers.Dropout(0.5)(x)
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(7, activation='softmax', name='category')(x1)
+y1 = Dense(4, activation='softmax', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_net.input, outputs=y1)
@@ -119,47 +120,83 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
         yield (batch_inputs, batch_labels_category)
 
 # 設�?超�??�HyperParameters
-epochs = 100
+epochs = 30
 batch = 32 #128
 file_number = 1
 #file_len = 3776#21600
-x_data = np.load(os.path.join(trainpath,'inputs1train_pattern2.npy'))
-y_data = np.load(os.path.join(trainpath,'labels1train_pattern2.npy'))
-print(len(x_data),len(y_data))
-# k = 5
-# num_val_samples = len(train_data) // k
-# train_acc_list = []
-# val_acc_list = []
-datasize = int(len(x_data)*0.8)
-x_train = x_data[:datasize]
-y_train = y_data[:datasize]
-datasize = int(len(x_data)*0.2)
-x_val = x_data[-datasize:]
-y_val_category = y_data[-datasize:]
-print(len(x_train),len(y_train),len(x_val),len(y_val_category))
+train_data = np.load(os.path.join(trainpath,'inputs1train_down_0602.npy'))
+train_target = np.load(os.path.join(trainpath,'labels1train_down_0602.npy'))
+print(len(train_data),len(train_target))
+k = 5
+num_val_samples = len(train_data) // k
+train_acc_list = []
+val_acc_list = []
+# print(len(x_data),len(y_data))
+# datasize = int(len(x_data)*0.8)
+# x_train = x_data[:datasize]
+# y_train = y_data[:datasize]
+# datasize = int(len(x_data)*0.2)
+# x_val = x_data[-datasize:]
+# y_val_category = y_data[-datasize:]
+# print(len(x_train),len(y_train),len(x_val),len(y_val_category))
+for i in range(k):
+    print("preprocessing fold #",i)
+    val_data = train_data[i * num_val_samples: (i+1) * num_val_samples]
+    val_target = train_target[i * num_val_samples: (i+1) * num_val_samples]
 
-time_start = time.time() 
-train_generator = train_datagen.flow(
-    x_train,
-    y=y_train,
-    batch_size=batch,
-    shuffle=True,
-)
+    partial_train_data = np.concatenate([train_data[:i * num_val_samples], train_data[(i+1) * num_val_samples:]], axis = 0)
+    partial_train_target = np.concatenate([train_target[:i * num_val_samples], train_target[(i+1) * num_val_samples:]], axis = 0)
 
-history = final_model.fit_generator(
-    #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
-    train_generator,
-    #steps_per_epoch=file_number * (file_len / batch),
-    epochs=epochs,
-    validation_data=(x_val, y_val_category),
-    callbacks=[early_stopping, rlr]
+    train_generator = train_datagen.flow(
+        partial_train_data,
+        y=partial_train_target,
+        batch_size=batch,
+        shuffle=True,
     )
+    name ='EfficientNetB7_down_0731'
+    filepath = base_path +'/model/kfold_confu_matrix/ '+ name + '{val_accuracy:.2f}%-' + str(i) + 'fold.hdf5'
+    checkpoint = ModelCheckpoint(
+        filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max'
+    )
+    history = final_model.fit_generator(
+        #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
+        train_generator,
+        #steps_per_epoch=file_number * (file_len / batch),
+        epochs=epochs,
+        validation_data=(val_data, val_target),
+        callbacks=[early_stopping, rlr, checkpoint]
+        )
+    accu= np.sort(history.history['accuracy'])
+    accu_max = np.mean(accu[-2:])
 
+    val_accu = history.history['val_accuracy']
+    val_accu_max = np.mean(val_accu[-2:])
 
-name ='EfficientNetB7_pattern_0623'
-time_end = time.time()
-time_c= time_end - time_start   #執行所花時間
-print('time cost', time_c, 's')
+    train_acc_list.append(accu_max)
+    val_acc_list.append(val_accu_max)
+    print('-------fold: ', i)
+    print("train Accuracy = ", train_acc_list)
+    print("val Accuracy = ", val_acc_list)
+
+    # predict val output
+    predict = final_model.predict(val_data)
+    predict = np.argmax(predict, axis=1)
+
+    # f1 score
+    f1_micro = f1_score(val_target, predict, average='micro')
+    print('f1 score: ', f1_micro)
+
+    # plot confusion matrix
+    mat = confusion_matrix(val_target, predict, normalize='true')
+    print(mat)
+    sns.heatmap(mat, square=True, cmap='Blues', annot=True, cbar=False)
+    plt.ylabel('true_label')
+    plt.xlavel('predicted label')
+    plt.title(name)
+    plt.savefig(pltsave_path + '/kfold_confu_matrix' + name + 'fold: ' + str(i) + '.png')
+    plt.show()
+    plt.close('all')
+
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
@@ -170,4 +207,7 @@ def plot_learning_curves(history):
     plt.show()
 
 plot_learning_curves(history)
+print("train Accuracy = ", train_acc_list)
+print("val Accuracy = ", val_acc_list)
+print("Average val Accuracy = ", np.mean(val_acc_list))
 final_model.save(base_path +'/model/'+ name +'.h5')

@@ -22,6 +22,7 @@ from keras.callbacks import EarlyStopping
 import tensorflow as tf
 from PIL import Image
 import efficientnet.keras as efn 
+import time
 
 config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
 sess = tf.compat.v1.Session(config=config)
@@ -59,20 +60,18 @@ model_net = efn.EfficientNetL2(input_shape=(128,128,3), # 當 include_top=False 
 #build the category classification branch in the model
 x = model_net.output
 x = layers.Dropout(0.5)(x)
-#category
-#5/10 神經元從512顆改為4試看看
 x1 = Dense(512, activation='relu', kernel_regularizer=l2(0.001))(x)
-y1 = Dense(2, activation='sigmoid', name='category')(x1)
+y1 = Dense(4, activation='softmax', name='category')(x1)
 
 #create final model by specifying the input and outputs for the branches
 final_model = Model(inputs=model_net.input, outputs=y1)
 
-print(final_model.summary())
+#print(final_model.summary())
 
 #opt = SGD(lr=0.001, momentum=0.9, nesterov=True)
 opt = Adam(learning_rate=0.001)
 
-final_model.compile(optimizer=opt,loss={'category':'binary_crossentropy'
+final_model.compile(optimizer=opt,loss={'category':'categorical_crossentropy'
                                         },
                     metrics={'category':['accuracy'] 
          }
@@ -123,30 +122,58 @@ def generate_arrays_from_file(trainpath,set_len,file_nums,has_remainder=0,batch_
 epochs = 300
 batch = 32 #128
 file_number = 1
+k = 2
 file_len = 3776#21600
-x_val = np.load(os.path.join(val_path,'inputs5val_coat_0519_nohand.npy'))
-y_val_category = np.load(os.path.join(val_path,'labels5val_coat_0519_nohand.npy'))
+x_val = np.load(os.path.join(val_path,'inputs1val_down_0602.npy'))
+y_val_category = np.load(os.path.join(val_path,'labels1val_down_0602.npy'))
+x_train = np.load(os.path.join(trainpath,'inputs1train_down_0602.npy'))
+y_train = np.load(os.path.join(trainpath,'labels1train_down_0602.npy'))
 
-x_train = np.load(os.path.join(trainpath,'inputs1train_coat_0519_nohand.npy'))
-y_train = np.load(os.path.join(trainpath,'labels1train_coat_0519_nohand.npy'))
+train_data = np.concatenate([x_train, x_val], axis = 0)
+train_target = np.concatenate([y_train, y_val_category], axis = 0)
+print(len(x_train),len(x_val),len(train_data))
 
-train_generator = train_datagen.flow(
-    x_train,
-    y=y_train,
-    batch_size=batch,
-    shuffle=True,
-)
+num_val_samples = len(train_data) // k
+train_acc_list = []
+val_acc_list = []
+time_start = time.time() 
+for i in range(k):
+    print("preprocessing fold #",i)
+    val_data = train_data[i * num_val_samples: (i+1) * num_val_samples]
+    val_target = train_target[i * num_val_samples: (i+1) * num_val_samples]
 
-history = final_model.fit_generator(
-    #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
-    train_generator,
-    #steps_per_epoch=file_number * (file_len / batch),
-    epochs=epochs,
-    validation_data=(x_val, y_val_category),
-    callbacks=[early_stopping, rlr]
+    partial_train_data = np.concatenate([train_data[:i * num_val_samples], train_data[(i+1) * num_val_samples:]], axis = 0)
+    partial_train_target = np.concatenate([train_target[:i * num_val_samples], train_target[(i+1) * num_val_samples:]], axis = 0)
+
+    train_generator = train_datagen.flow(
+        partial_train_data,
+        y = partial_train_target,
+        batch_size=batch,
+        shuffle=True,
     )
 
-name ='EfficientNetL2_coat_0622'
+    history = final_model.fit_generator(
+        #generate_arrays_from_file(trainpath, file_len, file_number, batch_size=batch),
+        train_generator,
+        #steps_per_epoch=file_number * (file_len / batch),
+        epochs=epochs,
+        validation_data=(val_data, val_target),
+        callbacks=[early_stopping, rlr]
+        )
+    accu= np.sort(history.history['accuracy'])
+    accu_max = np.mean(accu[-2:])
+    val_accu = history.history['val_accuracy']
+    val_accu_max = np.mean(val_accu[-2:])
+    train_acc_list.append(accu_max)
+    val_acc_list.append(val_accu_max)
+    print("train Accuracy = ", train_acc_list)
+    print("val Accuracy = ", val_acc_list)
+
+time_end = time.time()
+time_c= time_end - time_start   #執行所花時間
+print('time cost', time_c, 's')
+
+name ='EfficientNetL2_down_kfold_0615'
 
 def plot_learning_curves(history):
     pd.DataFrame(history.history).plot(figsize=(8, 5))
@@ -157,4 +184,7 @@ def plot_learning_curves(history):
     plt.show()
 
 plot_learning_curves(history)
+print("train Accuracy = ", train_acc_list)
+print("val Accuracy = ", val_acc_list)
+print("Average val Accuracy = ", np.mean(val_acc_list))
 final_model.save(base_path +'/model/+'+ name +'.h5')

@@ -8,6 +8,7 @@ img_dir = base_path + '/img_body/'
 new_img_dir = base_path + '/img_body/'
 #filename='003147.jpg'
 
+
 def cutimgBg(frame):
     pos =[]
     smask =[]
@@ -22,12 +23,12 @@ def cutimgBg(frame):
     ymax = np.max(pos[0])
 
     frame2 = frame[ymin: ymax, xmin: xmax]
-    a = 7
-    b = 5
+    a = 5
+    b = 3.5
     y_fix = int((1/a)*np.shape(frame2)[0])
     x_fix = int((1/b)*np.shape(frame2)[1])
     #print(y_fix,x_fix)
-    new_img = frame2[y_fix: y_fix*(a-1), x_fix: x_fix*(a-1)]
+    new_img = frame2[int(y_fix*2): y_fix*(a-1), x_fix: x_fix*(a-1)]
 
     #except:
     #    new_img = frame
